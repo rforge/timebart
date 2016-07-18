@@ -8,7 +8,7 @@ mc.surv.bart.gse <- function(
                     power=2.0, base=0.95,
                     binaryOffset=NULL,
                     ndpost=10000L, nskip=50L,
-                    printevery=100L, keepevery=1L, keeptrainfits=TRUE,
+                    printevery=100L, keepevery=1L, keeptrainfits=FALSE,
                     usequants=FALSE, numcut=100L, printcutoffs=0L,
                     verbose=TRUE,
                     seed = 99L,    

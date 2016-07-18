@@ -13,6 +13,7 @@ surv.bart <- function(
     keepevery = 10L, keeptrainfits = TRUE,
     usequants = FALSE, numcut = 100L, printcutoffs = 0L,
     verbose = TRUE,
+    id = NULL,     ## only used by surv.bart
     seed = 99L,    ## only used by mc.surv.bart
     mc.cores = 2L, ## ditto
     nice=19L       ## ditto
@@ -41,7 +42,7 @@ surv.bart <- function(
         K     <- length(times)
     }
 
-    cat('dbarts\n')
+    cat('timebart::surv.bart\n')
     
     post <- dbarts::bart(x.train=x.train, y.train=y.train, x.test=x.test,
                         k=k,
@@ -55,6 +56,7 @@ surv.bart <- function(
 
     post$call <- NULL
     post$binaryOffset <- NULL
+    post$id <- id
     post$times <- times
     post$K <- K
     post$x.train <- x.train

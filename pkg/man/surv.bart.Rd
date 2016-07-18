@@ -47,6 +47,7 @@ surv.bart( x.train, y.train=NULL, times=NULL, delta=NULL, x.test=matrix(0.0,0,0)
            ntree=50, ndpost=10000, nskip=250, printevery=100, keepevery=10,
            keeptrainfits=TRUE, usequants=FALSE, numcut=100, printcutoffs=0,
            verbose=TRUE, 
+           id=NULL,    ## surv.bart only
            seed=99,    ## mc.surv.bart only
            mc.cores=2, ## mc.surv.bart only
            nice=19L    ## mc.surv.bart only
@@ -57,6 +58,7 @@ mc.surv.bart( x.train, y.train=NULL, times=NULL, delta=NULL, x.test=matrix(0.0,0
               ntree=50, ndpost=10000, nskip=250, printevery=100, keepevery=10,
               keeptrainfits=TRUE, usequants=FALSE, numcut=100, printcutoffs=0,
               verbose=TRUE, 
+              id=NULL,    ## surv.bart only
               seed=99,    ## mc.surv.bart only
               mc.cores=2, ## mc.surv.bart only
               nice=19L    ## mc.surv.bart only
@@ -189,6 +191,10 @@ that the definition of \code{x.train} is dependent on whether
 
    \item{verbose}{
    Logical, if FALSE supress printing.
+   }
+
+   \item{id}{
+     \code{surv.bart} only: unique identifier added to returned list.
    }
 
    \item{seed}{

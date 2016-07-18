@@ -13,6 +13,7 @@ mc.surv.bart <- function(
     keepevery = 10L, keeptrainfits = TRUE,
     usequants = FALSE, numcut = 100L, printcutoffs = 0L,
     verbose = TRUE,
+    id = NULL,     ## only used by surv.bart
     seed = 99L,    ## only used by mc.surv.bart
     mc.cores = 2L, ## ditto
     nice=19L       ## ditto

@@ -1,13 +1,14 @@
 mc.surv.bart.gse <- function(
                     x.train, times, delta,
                     P=50L, ## number of permutations 
+                    R=5L,  ## number of replicates 
                     ntree=20L,  
                     C=1,
                     alpha=0.05,
                     k=2.0,
                     power=2.0, base=0.95,
                     binaryOffset=NULL,
-                    ndpost=10000L, nskip=50L,
+                    ndpost=2000L, nskip=50L,
                     printevery=100L, keepevery=1L, keeptrainfits=FALSE,
                     usequants=FALSE, numcut=100L, printcutoffs=0L,
                     verbose=TRUE,
@@ -16,89 +17,53 @@ mc.surv.bart.gse <- function(
                     nice=19L       
                     )
 {
-    RNGkind("L'Ecuyer-CMRG")
     set.seed(seed)
-    parallel::mc.reset.stream()
-
-    mc.cores.detected <- parallel::detectCores()
-
-    if(mc.cores>mc.cores.detected)
-        warning(paste0('The number of cores requested, mc.cores=', mc.cores,
-                       ',\n exceeds the number of cores detected via detectCores() ',
-                       'which yields ', mc.cores.detected, ' .'))        
 
     N <- length(delta)
     K <- ncol(x.train)+1 ## add 1 for time
     
     perm <- matrix(runif(N*P), nrow=N, ncol=P)
     
-    post <- list()
-    post.list <- list()
+    prob <- matrix(nrow=P, ncol=K)
     
-    j <- 0
     h <- 1
-    l <- 0
     
-    while(j<=P) {
-        for(i in 1:mc.cores) if(j<=P) {
-            if(j==0) {
-                times. <- times
-                delta. <- delta
-            }
-            else {
-                times. <- times[rank(perm[ , j])]
-                delta. <- delta[rank(perm[ , j])]
-            }
-            
-            parallel::mcparallel({tools::psnice(value=nice);
-                surv.bart(x.train=x.train, times=times., delta=delta.,
-                            k=k,
-                            power=power, base=base,
-                            binaryOffset=binaryOffset,
-                            ntree=ntree,
-                            ndpost=ndpost, nskip=nskip,
-                            printevery=printevery,
-                            keepevery=keepevery,
-                            keeptrainfits=keeptrainfits,
-                            usequants=usequants, numcut=numcut,
-                            printcutoffs=printcutoffs,
-                            verbose=verbose, id=j)},
-                       silent=(j!=0))
-            ## to avoid duplication of output
-            ## capture stdout from first posterior only
-
-            j <- j+1
+    for(i in 0:P) {
+        if(i==0) {
+            times. <- times
+            delta. <- delta
+        }
+        else {
+            times. <- times[rank(perm[ , i])]
+            delta. <- delta[rank(perm[ , i])]
         }
         
-        post.list <- parallel::mccollect()
+        tmp2 <- matrix(nrow=R, ncol=K)
+        
+        for(j in 1:R) {
+            tmp1 <- mc.surv.bart(x.train=x.train, times=times., delta=delta.,
+                                 k=k,
+                                 power=power, base=base,
+                                 binaryOffset=binaryOffset,
+                                 ntree=ntree,
+                                 ndpost=ndpost, nskip=nskip,
+                                 printevery=printevery,
+                                 keepevery=keepevery,
+                                 keeptrainfits=keeptrainfits,
+                                 usequants=usequants, numcut=numcut,
+                                 printcutoffs=printcutoffs,
+                                 verbose=verbose, 
+                                 seed=h, mc.cores=mc.cores, nice=nice)$varcount
 
-        return(post.list)
+            tmp1 <- tmp1/apply(tmp1, 1, sum)
 
-        for(i in 1:length(post.list)) {
-            if(post.list[[i]]$id==0) l <- h
-            post[[h]] <- post.list[[i]]$varcount
+            tmp2[j, ] <- apply(tmp1, 2, mean)
+
             h <- h+1
         }
 
-        post.list <- NULL
-    }
-
-    varcount <- post[[l]]/apply(post[[l]], 1, sum)
-
-    varcount <- apply(varcount, 2, mean)
-
-    #remove l-th item from list corresponding to unpermuted times/delta
-    post[[l]] <- NULL
-    
-    for(j in 1:P) {
-        total <- apply(post[[j]], 1, sum)
-
-        post[[j]] <- post[[j]]/total
-
-        post[[j]] <- apply(post[[j]], 2, mean)
-
-        if(j==1) prob <- matrix(post[[j]], nrow=1, ncol=K)
-        else prob <- rbind(prob, post[[j]])
+        if(i==0) varcount <- apply(tmp2, 2, mean)
+        else prob[i, ] <- apply(tmp2, 2, mean)
     }
 
     mu.k <- apply(prob, 2, mean)
@@ -125,6 +90,6 @@ mc.surv.bart.gse <- function(
         warning('Algorithm stopped at iteration 1.  Try again with a smaller C.')
     
     return(list(which=which(varcount>(mu.k+C*sd.k)), prob=varcount,
-                C=C, mu.k=mu.k, sd.k=sd.k, iter=iter, perm.prob=post))
+                C=C, mu.k=mu.k, sd.k=sd.k, iter=iter, perm.prob=prob))
 }
                

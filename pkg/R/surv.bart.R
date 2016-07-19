@@ -63,19 +63,21 @@ surv.bart <- function(
 
     if(keepevery>1L) { ## thinning with dbarts not available
         thin <- seq(1, ndpost, keepevery)
-        post$yhat.train <- post$yhat.train[thin, ]
+        if(keeptrainfits) post$yhat.train <- post$yhat.train[thin, ]
         post$varcount <- post$varcount[thin, ]
     }
 
-    post$surv.train <- 1-pnorm(post$yhat.train)
+    if(keeptrainfits) {
+        post$surv.train <- 1-pnorm(post$yhat.train)
 
-    H <- nrow(x.train)/K ## the number of different settings
+        H <- nrow(x.train)/K ## the number of different settings
 
-    for(h in 1:H) for(j in 2:K)
+        for(h in 1:H) for(j in 2:K)
                       post$surv.train[ , K*(h-1)+j] <-
                           post$surv.train[ , K*(h-1)+j-1]*post$surv.train[ , K*(h-1)+j]
 
-    post$surv.train.mean <- apply(post$surv.train, 2, mean)
+        post$surv.train.mean <- apply(post$surv.train, 2, mean)
+    }
     
     if(length(x.test)>0) {
         post$x.test <- x.test

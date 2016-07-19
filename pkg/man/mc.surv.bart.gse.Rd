@@ -8,10 +8,10 @@ very computationally intensive so we present some trade-offs below. }
 
 \usage{
 mc.surv.bart.gse( x.train, times, delta,
-                 P=50L, ntree=20L, C=1, alpha=0.05,
+                 P=50L, R=5L, ntree=20L, C=1, alpha=0.05,
                  k=2.0, power=2.0, base=.95,
                  binaryOffset=NULL,
-                 ndpost=10000L, nskip=50L,
+                 ndpost=2000L, nskip=50L,
                  printevery=100L, keepevery=1L, keeptrainfits=FALSE,
                  usequants=FALSE, numcut=100L, printcutoffs=0L,
                  verbose=TRUE,
@@ -37,7 +37,11 @@ draws of \eqn{f(t, x)} for each \eqn{x} which is a row of x.train.  }
    \item{P}{
      The number of permutations: typically 50 or 100.
    }
-   
+
+   \item{R}{
+     The number of replicates: typically 5 or 10.
+   }   
+
    \item{ntree}{
      The number of trees.  In variable selection,
      the number of trees is smaller than what might
@@ -161,7 +165,7 @@ draws of \eqn{f(t, x)} for each \eqn{x} which is a row of x.train.  }
 Rodney Sparapani: \email{rsparapa@mcw.edu}
 }
 \seealso{
-\code{\link{surv.bart}}
+\code{\link{mc.surv.bart}}
 }
 \examples{
 \dontrun{

@@ -71,7 +71,7 @@ mc.surv.bart <- function(
     if(mc.cores==1) return(post)
     else {
         for(i in 2:mc.cores) {
-            post$yhat.train <- rbind(post$yhat.train, post.list[[i]]$yhat.train)
+            if(keeptrainfits) post$yhat.train <- rbind(post$yhat.train, post.list[[i]]$yhat.train)
 
             if(length(post$surv.train)>0)
                 post$surv.train <- rbind(post$surv.train, post.list[[i]]$surv.train)

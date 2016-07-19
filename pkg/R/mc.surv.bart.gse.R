@@ -52,18 +52,19 @@ mc.surv.bart.gse <- function(
                                  keeptrainfits=keeptrainfits,
                                  usequants=usequants, numcut=numcut,
                                  printcutoffs=printcutoffs,
-                                 verbose=verbose, 
+                                 verbose=(i==0 & j==1 & verbose), 
                                  seed=h, mc.cores=mc.cores, nice=nice)$varcount
-
-            tmp1 <- tmp1/apply(tmp1, 1, sum)
 
             tmp2[j, ] <- apply(tmp1, 2, mean)
 
             h <- h+1
         }
 
-        if(i==0) varcount <- apply(tmp2, 2, mean)
-        else prob[i, ] <- apply(tmp2, 2, mean)
+        tmp1 <- apply(tmp2, 2, mean)
+        tmp1 <- tmp1/sum(tmp1)
+        
+        if(i==0) varcount <- tmp1
+        else prob[i, ] <- tmp1
     }
 
     mu.k <- apply(prob, 2, mean)

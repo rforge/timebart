@@ -1,7 +1,7 @@
-## run DSS in parallel
-## 07/20/16
+## run DSS 
+## 07/22/16
 
-mc.surv.bart.dss <- function(
+surv.bart.dss <- function(
     post,          ## posterior from surv.bart/mc.surv.bart                         
                    ## which includes x.train and yhat.train
     mc.cores = 2L, ## for mc.surv.bart.dss only
@@ -20,36 +20,18 @@ mc.surv.bart.dss <- function(
     h <- 1 ## start with time only
     j <- 1
     
-    if(K>1) while(j==1) {
-        l <- 0
-        
+    stopifnot(K>1)
+    
+    while(j==1) {
         for(k in 2:K) {
             if(k %in% h) R2[k] <- 0
             else {
-                if(l[1]==0) l <- k
-                else l <- c(k, l) ## LIFO
-                    
-                parallel::mcparallel({tools::psnice(value=nice);
-                    rpart::rpart(post$yhat.train.mean~post$x.train[ , c(k, h)])})
-            }
-
-            if(l[1]==0) j <- 0
-            else j <- length(l)
-                
-            if(j==mc.cores | (j>0 & k==K)) { 
-                fit <- parallel::mccollect()
-
-                i <- 1
-                    
-                for(j in l) { ## LIFO
-                    if(sd(predict(fit[[i]]))==0) R2[j] <- 0
-                    else R2[j] <- cor(post$yhat.train.mean, predict(fit[[i]]))^2
-
-                    i <- i+1
-                }
+                fit <- rpart::rpart(post$yhat.train.mean~post$x.train[ , c(k, h)])
+            
+                if(sd(predict(fit))==0) R2[k] <- 0
+                else R2[k] <- cor(post$yhat.train.mean, predict(fit))^2
 
                 fit <- NULL
-                l <- 0
             }
         }
         

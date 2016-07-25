@@ -1,5 +1,5 @@
 
-export(surv.pre.bart, surv.bart, mc.surv.bart, mc.surv.bart.gse, mc.surv.bart.dss)
+export(surv.pre.bart, surv.bart, mc.surv.bart, mc.surv.bart.gse, surv.bart.dss, mc.surv.bart.dss)
 export(recur.pre.bart, recur.bart, mc.recur.bart)
 
 importFrom(stats, pnorm, qnorm)

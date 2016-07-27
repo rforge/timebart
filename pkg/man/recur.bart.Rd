@@ -248,7 +248,11 @@ Rodney Sparapani: \email{rsparapa@mcw.edu}
 }
 \examples{
 \dontrun{
-require(timebart)
+require(survival)
+
+subset <- -which(bladder1$stop==0)
+
+bladder0 <- bladder1[subset, ]
 
 }
 }

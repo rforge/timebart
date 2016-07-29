@@ -9,21 +9,21 @@ recur.bart <- function(
     binaryOffset = NULL,
     ntree = 50L,
     ndpost = 10000L, nskip = 250L,
-    printevery = 100L, 
+    printevery = 100L,
     keepevery = 10L, keeptrainfits = TRUE,
     usequants = FALSE, numcut = 100L, printcutoffs = 0L,
     verbose = TRUE,
     seed = 99L,    ## only used by mc.recur.bart
     mc.cores = 2L, ## ditto
     nice=19L       ## ditto
-    )  
+    )
 {
     if(length(y.train)==0) {
         recur <- recur.pre.bart(times, delta, x.train, x.test)
 
         y.train <- recur$y.train
         x.train <- recur$X.train
-        x.test  <- recur$X.test 
+        x.test  <- recur$X.test
 
         times   <- recur$times
         K       <- recur$K
@@ -36,15 +36,15 @@ recur.bart <- function(
     }
     else {
         if(length(binaryOffset)==0) binaryOffset <- 0
-        
+
         times <- unique(sort(x.train[ , 1]))
         K     <- length(times)
     }
 
     cat('dbarts\n')
-    
+
     post <- dbarts::bart(x.train=x.train, y.train=y.train, x.test=x.test,
-                        sigest = NA_real_, sigdf = 3.0, sigquant = 0.90, 
+                        sigest = NA_real_, sigdf = 3.0, sigquant = 0.90,
                         k=k,
                         power=power, base=base,
                         binaryOffset=binaryOffset,
@@ -55,7 +55,7 @@ recur.bart <- function(
                         verbose=verbose)
 
     post$call <- NULL
-    post$binaryOffset <- NULL    
+    post$binaryOffset <- NULL
     post$times <- times
     post$K <- K
     post$x.train <- x.train
@@ -69,16 +69,30 @@ recur.bart <- function(
     post$cum.train <- pnorm(post$yhat.train)
     post$haz.train <- post$cum.train
 
-    H <- nrow(x.train)/K ## the number of different settings
+    H <- nrow(x.train)
+    time <- 0
 
-    for(h in 1:H) for(i in 1:K) {
-                      j <- (h-1)*K+i
-                      if(i==1) post$haz.train[ , j] <- post$haz.train[ , j]/post$times[1]
-                      else {
-                          post$haz.train[ , j] <- post$haz.train[ , j]/(post$times[i]-post$times[i-1])
-                          post$cum.train[ , j] <- post$cum.train[ , j-1]+post$cum.train[ , j]
-                      }
-                  }
+    for(h in 1:H) {
+        prev <- time
+        time <- x.train[h, 1]
+
+        if(time==post$times[1]) post$haz.train[ , h] <- post$haz.train[ , h]/time
+        else {
+            post$haz.train[ , h] <- post$haz.train[ , h]/(time-prev)
+            post$cum.train[ , h] <- post$cum.train[ , h-1]+post$cum.train[ , h]
+        }
+    }
+
+    ## H <- nrow(x.train)/K ## the number of different settings
+
+    ## for(h in 1:H) for(i in 1:K) {
+    ##                   j <- (h-1)*K+i
+    ##                   if(i==1) post$haz.train[ , j] <- post$haz.train[ , j]/post$times[1]
+    ##                   else {
+    ##                       post$haz.train[ , j] <- post$haz.train[ , j]/(post$times[i]-post$times[i-1])
+    ##                       post$cum.train[ , j] <- post$cum.train[ , j-1]+post$cum.train[ , j]
+    ##                   }
+    ##               }
 
     if(length(x.test)>0) {
         if(keepevery>1L) post$yhat.test <- post$yhat.test[thin, ]
@@ -87,16 +101,30 @@ recur.bart <- function(
         post$cum.test <- pnorm(post$yhat.test)
         post$haz.test <- post$cum.test
 
-        H <- nrow(x.test)/K ## the number of different settings
+        H <- nrow(x.test)
+        time <- 0
 
-        for(h in 1:H) for(i in 1:K) {
-                          j <- (h-1)*K+i
-                          if(i==1) post$haz.test[ , j] <- post$haz.test[ , j]/post$times[1]
-                          else {
-                              post$haz.test[ , j] <- post$haz.test[ , j]/(post$times[i]-post$times[i-1])
-                              post$cum.test[ , j] <- post$cum.test[ , j-1]+post$cum.test[ , j]
-                          }
-                      }
+        for(h in 1:H) {
+            prev <- time
+            time <- x.test[h, 1]
+
+            if(time==post$times[1]) post$haz.test[ , h] <- post$haz.test[ , h]/time
+            else {
+                post$haz.test[ , h] <- post$haz.test[ , h]/(time-prev)
+                post$cum.test[ , h] <- post$cum.test[ , h-1]+post$cum.test[ , h]
+            }
+        }
+
+        ## H <- nrow(x.test)/K ## the number of different settings
+
+        ## for(h in 1:H) for(i in 1:K) {
+        ##                   j <- (h-1)*K+i
+        ##                   if(i==1) post$haz.test[ , j] <- post$haz.test[ , j]/post$times[1]
+        ##                   else {
+        ##                       post$haz.test[ , j] <- post$haz.test[ , j]/(post$times[i]-post$times[i-1])
+        ##                       post$cum.test[ , j] <- post$cum.test[ , j-1]+post$cum.test[ , j]
+        ##                   }
+        ##               }
     }
 
     return(post)

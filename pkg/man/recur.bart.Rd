@@ -46,7 +46,7 @@ recur.bart(x.train, y.train=NULL, times=NULL, delta=NULL, x.test=matrix(0.0,0,0)
            k=2.0, power=2.0, base=.95, binaryOffset=NULL,
            ntree=50, ndpost=10000, nskip=250, printevery=100, keepevery=10,
            keeptrainfits=TRUE, usequants=FALSE, numcut=100, printcutoffs=0,
-           verbose=TRUE, 
+           verbose=TRUE,
            seed=99,    ## mc.recur.bart only
            mc.cores=2, ## mc.recur.bart only
            nice=19L    ## mc.recur.bart only
@@ -56,7 +56,7 @@ mc.recur.bart(x.train, y.train=NULL, times=NULL, delta=NULL, x.test=matrix(0.0,0
               k=2.0, power=2.0, base=.95, binaryOffset=NULL,
               ntree=50, ndpost=10000, nskip=250, printevery=100, keepevery=10,
               keeptrainfits=TRUE, usequants=FALSE, numcut=100, printcutoffs=0,
-              verbose=TRUE, 
+              verbose=TRUE,
               seed=99,    ## mc.recur.bart only
               mc.cores=2, ## mc.recur.bart only
               nice=19L    ## mc.recur.bart only
@@ -198,7 +198,7 @@ that the definition of \code{x.train} is dependent on whether
    \item{mc.cores}{
      \code{mc.recur.bart} only: number of cores to employ in parallel.
    }
-   
+
    \item{nice}{
      \code{mc.recur.bart} only: set the job priority.  The default
      priority is 19: priorities go from 0 (highest) to 19 (lowest).
@@ -248,11 +248,56 @@ Rodney Sparapani: \email{rsparapa@mcw.edu}
 }
 \examples{
 \dontrun{
+
 require(survival)
 
 subset <- -which(bladder1$stop==0)
 
 bladder0 <- bladder1[subset, ]
+
+id <- unique(sort(bladder0$id))
+
+N <- length(id)
+K <- max(bladder0$enum)
+
+times <- matrix(0, nrow=N, ncol=K)
+dimnames(times)[[1]] <- paste0(id)
+
+delta <- matrix(0, nrow=N, ncol=K)
+dimnames(delta)[[1]] <- paste0(id)
+
+X.train <- matrix(0, nrow=N, ncol=3)
+dimnames(X.train)[[1]] <- paste0(id)
+dimnames(X.train)[[2]] <- c('Pl=1,B6=2,Th=3', 'number', 'size')
+
+for(i in 1:N) {
+    h <- id[i]
+
+    for(j in 1:K) {
+        k <- which(bladder0$id==h & bladder0$enum==j)
+
+        if(length(k)==1) {
+            times[i, j] <- bladder0$stop[k]
+            delta[i, j] <- (bladder0$recur[k]==1)*1
+
+            if(j==1) {
+                X.train[i, 1] <- as.integer(bladder0$treatment[k])
+                X.train[i, 2] <- bladder0$number[k]
+                X.train[i, 3] <- bladder0$size[k]
+            }
+        }
+    }
+}
+
+pre <- recur.pre.bart(times=times, delta=delta, x.train=X.train)
+
+K <- nrow(pre$X.train)
+
+pre$X.test <- rbind(pre$X.train, pre$X.train, pre$X.train)
+
+pre$X.test[ , 4] <- c(rep(1, K), rep(2, K), rep(3, K))
+
+post <- recur.bart(y.train=pre$y.train, x.train=pre$X.train, x.test=pre$X.test)
 
 }
 }

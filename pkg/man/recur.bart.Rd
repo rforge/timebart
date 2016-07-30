@@ -282,7 +282,7 @@ for(i in 1:N) {
             delta[i, j] <- (bladder0$status[k]==1)*1
 
             if(j==1) {
-                X.train[i, 1] <- as.integer(bladder0$treatment[k])
+                X.train[i, 1] <- as.numeric(bladder0$treatment[k])
                 X.train[i, 2] <- bladder0$number[k]
                 X.train[i, 3] <- bladder0$size[k]
             }
@@ -304,6 +304,8 @@ for(j in 1:K) {
         pre$X.train[j, 6] <- pre$X.train[j, 6+pre$X.train[j, 3]*2]
     }
 }
+
+pre$X.train <- pre$X.train[ , 1:6]
 
 pre$X.test <- rbind(pre$X.train, pre$X.train, pre$X.train)
 

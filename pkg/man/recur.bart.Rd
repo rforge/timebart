@@ -266,9 +266,10 @@ dimnames(times)[[1]] <- paste0(id)
 delta <- matrix(0, nrow=N, ncol=K)
 dimnames(delta)[[1]] <- paste0(id)
 
-X.train <- matrix(0, nrow=N, ncol=3)
+X.train <- matrix(0, nrow=N, ncol=2*K+1) ## add time-dependent cols too
 dimnames(X.train)[[1]] <- paste0(id)
-dimnames(X.train)[[2]] <- c('Pl=1,B6=2,Th=3', 'number', 'size')
+dimnames(X.train)[[2]] <- c('tx', rep(c('number', 'size'), K))
+##dimnames(X.train)[[2]] <- c('Pl=1,B6=2,Th=3', rep(c('number', 'size'), K))
 
 for(i in 1:N) {
     h <- id[i]
@@ -278,12 +279,16 @@ for(i in 1:N) {
 
         if(length(k)==1) {
             times[i, j] <- bladder0$stop[k]
-            delta[i, j] <- (bladder0$recur[k]==1)*1
+            delta[i, j] <- (bladder0$status[k]==1)*1
 
             if(j==1) {
                 X.train[i, 1] <- as.integer(bladder0$treatment[k])
                 X.train[i, 2] <- bladder0$number[k]
                 X.train[i, 3] <- bladder0$size[k]
+            }
+            else if(delta[i, j]==1) {
+                suppressWarnings(X.train[i, 2*j] <- as.numeric(bladder0$rtumor[k]))
+                suppressWarnings(X.train[i, 2*j+1] <- as.numeric(bladder0$rsize[k]))
             }
         }
     }
@@ -292,6 +297,13 @@ for(i in 1:N) {
 pre <- recur.pre.bart(times=times, delta=delta, x.train=X.train)
 
 K <- nrow(pre$X.train)
+
+for(j in 1:K) {
+    if(pre$X.train[j, 3]>0) {
+        pre$X.train[j, 5] <- pre$X.train[j, 5+pre$X.train[j, 3]*2]
+        pre$X.train[j, 6] <- pre$X.train[j, 6+pre$X.train[j, 3]*2]
+    }
+}
 
 pre$X.test <- rbind(pre$X.train, pre$X.train, pre$X.train)
 

@@ -99,7 +99,7 @@ recur.pre.bart <- function(
         }
     }
 
-    ## generate X.test from X.train with v(t) & N(t-) NA beyond follow-up
+    ## generate X.test from X.train with v(t) & N(t-) as NA beyond follow-up
     k <- 1
 
     for(i in 1:N) {
@@ -126,6 +126,45 @@ recur.pre.bart <- function(
         }
     }
 
+    ## generate X.base from X.train with v(t) & N(t-): baseline of the "middle" pattern
+    X.base <- cbind(X.test)
+
+    dimnames(X.base)[[2]] <- dimnames(X.train)[[2]]
+
+    pattern <- double(K)
+
+    for(j in 1:K) {
+        h <- seq(j, N*K, K)
+        pattern[j] <- round(quantile(X.base[h, 3], na.rm=TRUE,
+                                     probs=0.5+0.25*(1-mean(1*(!is.na(X.base[h, 3]))))))
+
+        if(j>1) {
+            if(pattern[j-1]<pattern[j]) pattern[j] <- pattern[j-1]+1
+            else if(pattern[j-1]>pattern[j]) pattern[j] <- pattern[j-1]
+        }
+    }
+
+    ##print(pattern)
+
+    for(i in 1:N) {
+        t.0 <- 0
+
+        for(j in 1:K) {
+            h <- (i-1)*K+j
+            if(is.na(X.base[h, 3])) {
+                if(X.base[h-1, 3]>pattern[j]) X.base[h, 3] <- X.base[h-1, 3]
+                else if(X.base[h-1, 3]<pattern[j]) {
+                    t.0 <- X.base[h-1, 1]
+                    X.base[h, 3] <- X.base[h-1, 3]+1
+                }
+                else X.base[h, 3] <- X.base[h-1, 3]
+
+                X.base[h, 2] <- X.base[h, 1]-t.0
+            }
+            else if(j>1) if(X.base[h, 3]>X.base[h-1, 3]) t.0 <- X.base[h-1, 1]
+        }
+    }
+
 ## automated X.test creation is not feasible since there is no obvious basis for v(t) and N(t-)
     ## if(p==0 | length(x.test)>0) {
     ##     X.test <- matrix(nrow=K*n, ncol=p+3, dimnames=dimnames(X.train))
@@ -138,7 +177,9 @@ recur.pre.bart <- function(
     ## }
     ## else X.test <- matrix(0.0, 0L, 0L)
 
-    return(list(y.train=y.train, X.train=X.train, X.test=X.test, times=events, K=K))
+    return(list(y.train=y.train, X.train=X.train, X.test=X.test, X.base=X.base,
+                times=events, K=K))
+
     ##return(list(y.train=y.train, X.train=X.train, X.test=matrix(0.0, 0L, 0L), times=events, K=K))
                 ##X.test=data.matrix(X.test), times=events, K=K))
 }

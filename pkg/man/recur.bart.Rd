@@ -307,6 +307,21 @@ for(j in 1:K) {
 
 pre$X.train <- pre$X.train[ , 1:6]
 
+K <- nrow(pre$X.test)
+
+for(j in 1:K) {
+    if(is.na(pre$X.test[j, 3])) {
+        pre$X.test[j, 5] <- NA
+        pre$X.test[j, 6] <- NA
+    }
+    else if(pre$X.test[j, 3]>0) {
+        pre$X.test[j, 5] <- pre$X.test[j, 5+pre$X.test[j, 3]*2]
+        pre$X.test[j, 6] <- pre$X.test[j, 6+pre$X.test[j, 3]*2]
+    }
+}
+
+pre$X.test <- pre$X.test[ , 1:6]
+
 pre$X.test <- rbind(pre$X.train, pre$X.train, pre$X.train)
 
 pre$X.test[ , 4] <- c(rep(1, K), rep(2, K), rep(3, K))

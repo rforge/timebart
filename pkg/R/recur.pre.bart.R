@@ -75,6 +75,10 @@ recur.pre.bart <- function(
         else dimnames(X.train)[[2]] <- c('t', 'v', 'N', paste0('x', 1:p))
     }
 
+    X.test <- matrix(nrow=N*K, ncol=ncol(X.train))
+
+    dimnames(X.test)[[2]] <- dimnames(X.train)[[2]]
+
     k <- 1
 
     for(i in 1:N) {
@@ -95,6 +99,33 @@ recur.pre.bart <- function(
         }
     }
 
+    ## generate X.test from X.train with v(t) & N(t-) NA beyond follow-up
+    k <- 1
+
+    for(i in 1:N) {
+        n.t <- 0
+        t.0 <- 0
+
+        for(j in 1:K)  {
+            X.test[k, 1:3] <- c(events[j], events[j]-t.0, n.t)
+
+            for(h in 1:J) {
+                if(events[j]==times[i, h] & delta[i, h]==1) {
+                    n.t <- n.t+1
+                    t.0 <- events[j]
+                }
+                else if(events[j] == times[i, J+1]) {
+                    n.t <- NA
+                    t.0 <- NA
+                }
+            }
+
+            if(p>0) X.test[k, 4:(3+p)] <- x.train[i, ]
+
+            k <- k+1
+        }
+    }
+
 ## automated X.test creation is not feasible since there is no obvious basis for v(t) and N(t-)
     ## if(p==0 | length(x.test)>0) {
     ##     X.test <- matrix(nrow=K*n, ncol=p+3, dimnames=dimnames(X.train))
@@ -107,6 +138,7 @@ recur.pre.bart <- function(
     ## }
     ## else X.test <- matrix(0.0, 0L, 0L)
 
-    return(list(y.train=y.train, X.train=X.train, X.test=matrix(0.0, 0L, 0L), times=events, K=K))
+    return(list(y.train=y.train, X.train=X.train, X.test=X.test, times=events, K=K))
+    ##return(list(y.train=y.train, X.train=X.train, X.test=matrix(0.0, 0L, 0L), times=events, K=K))
                 ##X.test=data.matrix(X.test), times=events, K=K))
 }

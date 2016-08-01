@@ -6,7 +6,7 @@ Recurrent event data contained in \eqn{(t_1,\delta_1, ..., t_k,\delta_k, x)} mus
 suitable for the BART model; see \code{recur.bart} for more details.
 }
 \usage{
-recur.pre.bart( times, delta, x.train=NULL, x.test=NULL )
+recur.pre.bart( times, delta, x.train=NULL, probs=c(0.15, 0.15) )
 }
 \arguments{
    \item{times}{
@@ -23,10 +23,29 @@ recur.pre.bart( times, delta, x.train=NULL, x.test=NULL )
    with (as usual) rows corresponding to observations and columns to variables.\cr
    }
 
-   \item{x.test}{
-     Currently, does nothing since there is not obvious
-     basis for \eqn{v(t)} and \eqn{N(t-)}.\cr
-   }
+   \item{probs}{ \code{X.test} is generated from \code{x.train} in a
+     similar fashion to \code{X.train}.  However, observations beyond
+     censoring contain \code{NA} for columns two and three containing
+     \eqn{v(t)} and \eqn{N(t-)} respectively.  In order to preform
+     prediction with \code{X.test}, then these missing values need to be
+     handled accordingly.  We provide an automated method for this which
+     is returned as \code{X.base}.  It would be difficult to provide an
+     efficient method that randomly generates \eqn{v(t)} and \eqn{N(t-)}
+     since they are structurally dependent.  Rather, we
+     deterministically generate them in such a fashion that they define
+     a "middle" baseline, i.e. the median \eqn{N(t-)} as a function of
+     \eqn{t} for non-censored subjects (calculated from \code{X.train});
+     the median is adjusted upward as the censoring increases with time
+     (if it does at all) to a maximum value controlled by the second
+     argument contained in \code{probs} since otherwise the "low" risk
+     subjects would be over-represented.  Each subject's previous value
+     is carried forward unless their computed sojourn time (which is a
+     function of the generated \eqn{N(t-)}) is longer than the the
+     median \eqn{v(t)} as a function of \eqn{t} (which is also
+     calculated from \code{X.train}); the median is adjusted downward as
+     the censoring increases with time (if it does at all) to a maximum
+     value controlled by the first argument contained in \code{probs}. }
+
 }
 
 \value{
@@ -36,7 +55,14 @@ Besides the items listed below, the list has
  unique times.
    \item{y.train}{A vector of binary responses.}
    \item{X.train}{A matrix with the rows of the training data.}
-   \item{X.test}{A matrix with the zero dimensions.}
+   \item{X.test}{Generated from \code{x.train} (see discussion above included in
+     the argument \code{probs}).}
+   \item{X.base}{Generated from \code{x.train} (see discussion above included in
+     the argument \code{probs}).}
+   \item{sojourn}{Generated from \code{x.train} (see discussion above included in
+     the argument \code{probs}).}
+   \item{pattern}{Generated from \code{x.train} (see discussion above included in
+     the argument \code{probs}).}
 }
 
 \author{

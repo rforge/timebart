@@ -17,7 +17,12 @@ recur.pre.bart <- function(
                       ## matrix of covariate regressors
                       ## can be NULL, i.e. KM analog
 
-                      x.test=NULL
+                      probs=c(0.15, 0.15)
+                      ## the maximum amount to adjust the quantile
+                      ## for the middle pattern due to censoring
+                      ## first decreases v(t) and the second increases N(t-)
+
+                      ##x.test=NULL
                       ## matrix of covariate regressors at X.test settings
                       ## does nothing for now since there is no obvious basis for v(t) and N(t-)
                       ) {
@@ -64,9 +69,7 @@ recur.pre.bart <- function(
     } else {
         p <- ncol(x.train)
 
-        if(length(x.test)>0) n <- nrow(x.test)
-
-        ##print(list(m, n, p))
+        ##if(length(x.test)>0) n <- nrow(x.test)
 
         X.train <- matrix(nrow=m, ncol=p+3)
 
@@ -131,20 +134,21 @@ recur.pre.bart <- function(
 
     dimnames(X.base)[[2]] <- dimnames(X.train)[[2]]
 
+    sojourn <- double(K)
     pattern <- double(K)
 
     for(j in 1:K) {
         h <- seq(j, N*K, K)
+        sojourn[j] <- quantile(X.base[h, 2], na.rm=TRUE,
+                               probs=0.5-probs[1]*(1-mean(1*(!is.na(X.base[h, 2])))))
         pattern[j] <- round(quantile(X.base[h, 3], na.rm=TRUE,
-                                     probs=0.5+0.25*(1-mean(1*(!is.na(X.base[h, 3]))))))
+                                     probs=0.5+probs[2]*(1-mean(1*(!is.na(X.base[h, 3]))))))
 
         if(j>1) {
             if(pattern[j-1]<pattern[j]) pattern[j] <- pattern[j-1]+1
             else if(pattern[j-1]>pattern[j]) pattern[j] <- pattern[j-1]
         }
     }
-
-    ##print(pattern)
 
     for(i in 1:N) {
         t.0 <- 0
@@ -153,7 +157,8 @@ recur.pre.bart <- function(
             h <- (i-1)*K+j
             if(is.na(X.base[h, 3])) {
                 if(X.base[h-1, 3]>pattern[j]) X.base[h, 3] <- X.base[h-1, 3]
-                else if(X.base[h-1, 3]<pattern[j]) {
+                else if(X.base[h-1, 3]<pattern[j] & (X.base[h-1, 1]-t.0)>=sojourn[j]) {
+                ##else if(X.base[h-1, 3]<pattern[j]) {
                     t.0 <- X.base[h-1, 1]
                     X.base[h, 3] <- X.base[h-1, 3]+1
                 }
@@ -178,7 +183,7 @@ recur.pre.bart <- function(
     ## else X.test <- matrix(0.0, 0L, 0L)
 
     return(list(y.train=y.train, X.train=X.train, X.test=X.test, X.base=X.base,
-                times=events, K=K))
+                times=events, K=K, pattern=pattern, sojourn=sojourn))
 
     ##return(list(y.train=y.train, X.train=X.train, X.test=matrix(0.0, 0L, 0L), times=events, K=K))
                 ##X.test=data.matrix(X.test), times=events, K=K))

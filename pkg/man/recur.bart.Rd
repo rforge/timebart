@@ -266,7 +266,7 @@ dimnames(times)[[1]] <- paste0(id)
 delta <- matrix(0, nrow=N, ncol=K)
 dimnames(delta)[[1]] <- paste0(id)
 
-X.train <- matrix(0, nrow=N, ncol=2*K+1) ## add time-dependent cols too
+X.train <- matrix(NA, nrow=N, ncol=2*K+1) ## add time-dependent cols too
 dimnames(X.train)[[1]] <- paste0(id)
 dimnames(X.train)[[2]] <- c('tx', rep(c('number', 'size'), K))
 ##dimnames(X.train)[[2]] <- c('Pl=1,B6=2,Th=3', rep(c('number', 'size'), K))
@@ -287,8 +287,10 @@ for(i in 1:N) {
                 X.train[i, 3] <- bladder0$size[k]
             }
             else if(delta[i, j]==1) {
-                suppressWarnings(X.train[i, 2*j] <- as.numeric(bladder0$rtumor[k]))
-                suppressWarnings(X.train[i, 2*j+1] <- as.numeric(bladder0$rsize[k]))
+                if(bladder0$rtumor[k]!='.')
+                    X.train[i, 2*j] <- as.numeric(bladder0$rtumor[k])
+                if(bladder0$rsize[k]!='.')
+                    X.train[i, 2*j+1] <- as.numeric(bladder0$rsize[k])
             }
         }
     }

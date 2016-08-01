@@ -2,7 +2,7 @@
 export(surv.pre.bart, surv.bart, mc.surv.bart, mc.surv.bart.gse, surv.bart.dss, mc.surv.bart.dss)
 export(recur.pre.bart, recur.bart, mc.recur.bart)
 
-importFrom(stats, cor, predict, pnorm, qnorm, runif, sd)
+importFrom(stats, cor, predict, pnorm, qnorm, quantile, runif, sd)
 importFrom(dbarts, bart, pdbart)
 importFrom(tools, psnice)
 importFrom(parallel, mcparallel, mccollect, mc.reset.stream, detectCores)

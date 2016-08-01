@@ -296,9 +296,9 @@ for(i in 1:N) {
 
 pre <- recur.pre.bart(times=times, delta=delta, x.train=X.train)
 
-K <- nrow(pre$X.train)
+J <- nrow(pre$X.train)
 
-for(j in 1:K) {
+for(j in 1:J) {
     if(pre$X.train[j, 3]>0) {
         pre$X.train[j, 5] <- pre$X.train[j, 5+pre$X.train[j, 3]*2]
         pre$X.train[j, 6] <- pre$X.train[j, 6+pre$X.train[j, 3]*2]
@@ -307,24 +307,20 @@ for(j in 1:K) {
 
 pre$X.train <- pre$X.train[ , 1:6]
 
-K <- nrow(pre$X.test)
+J <- nrow(pre$X.base)
 
-for(j in 1:K) {
-    if(is.na(pre$X.test[j, 3])) {
-        pre$X.test[j, 5] <- NA
-        pre$X.test[j, 6] <- NA
-    }
-    else if(pre$X.test[j, 3]>0) {
-        pre$X.test[j, 5] <- pre$X.test[j, 5+pre$X.test[j, 3]*2]
-        pre$X.test[j, 6] <- pre$X.test[j, 6+pre$X.test[j, 3]*2]
+for(j in 1:J) {
+    if(pre$X.base[j, 3]>0) {
+        pre$X.base[j, 5] <- pre$X.base[j, 5+pre$X.base[j, 3]*2]
+        pre$X.base[j, 6] <- pre$X.base[j, 6+pre$X.base[j, 3]*2]
     }
 }
 
-pre$X.test <- pre$X.test[ , 1:6]
+pre$X.base <- pre$X.base[ , 1:6]
 
-pre$X.test <- rbind(pre$X.train, pre$X.train, pre$X.train)
+pre$X.base <- rbind(pre$X.base, pre$X.base, pre$X.base)
 
-pre$X.test[ , 4] <- c(rep(1, K), rep(2, K), rep(3, K))
+pre$X.base[ , 4] <- c(rep(1, J), rep(2, J), rep(3, J))
 
 post <- recur.bart(y.train=pre$y.train, x.train=pre$X.train, x.test=pre$X.test)
 

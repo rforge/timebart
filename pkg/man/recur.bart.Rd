@@ -324,6 +324,18 @@ pre$X.base <- rbind(pre$X.base, pre$X.base, pre$X.base)
 
 pre$X.base[ , 4] <- c(rep(1, J), rep(2, J), rep(3, J))
 
+plot(pre$times, pre$pattern, ylim=c(0, max(pre$X.train[ , 3])))
+set.seed(10)
+u <- runif(N)*0.25
+for(i in 1:N) {
+    k <- (i-1)*60
+    h <- k+1:60
+    j <- which(!is.na(pre$X.test[h, 3]))
+    points(pre$times[j], pre$X.test[k+j, 3]+u[i], type='l')
+    j <- c(max(j), which(is.na(pre$X.test[h, 3])))
+    points(pre$times[j], pre$X.base[k+j, 3]+u[i], type='l', col='red')
+}
+
 post <- recur.bart(y.train=pre$y.train, x.train=pre$X.train, x.test=pre$X.test)
 
 }

@@ -43,8 +43,8 @@ surv.bart <- function(
     }
 
     cat('timebart::surv.bart\n')
-    
-    post <- dbarts::bart(x.train=x.train, y.train=y.train, x.test=x.test,
+
+    post <- bart(x.train=x.train, y.train=y.train, x.test=x.test,
                         k=k,
                         power=power, base=base,
                         binaryOffset=binaryOffset,
@@ -78,7 +78,7 @@ surv.bart <- function(
 
         post$surv.train.mean <- apply(post$surv.train, 2, mean)
     }
-    
+
     if(length(x.test)>0) {
         post$x.test <- x.test
         H <- nrow(x.test)/K ## the number of different settings

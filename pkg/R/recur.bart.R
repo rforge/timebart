@@ -43,7 +43,7 @@ recur.bart <- function(
 
     cat('dbarts\n')
 
-    post <- dbarts::bart(x.train=x.train, y.train=y.train, x.test=x.test,
+    post <- bart(x.train=x.train, y.train=y.train, x.test=x.test,
                         sigest = NA_real_, sigdf = 3.0, sigquant = 0.90,
                         k=k,
                         power=power, base=base,

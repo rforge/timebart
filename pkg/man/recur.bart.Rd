@@ -336,7 +336,82 @@ for(i in 1:N) {
     points(pre$times[j], pre$X.base[k+j, 3]+u[i], type='l', col='red')
 }
 
-post <- recur.bart(y.train=pre$y.train, x.train=pre$X.train, x.test=pre$X.test)
+## impute missing data, for example, via Sequential BART as shown
+## library(MASS)
+## library(Rlab)
+## library(msm)
+## source('~/sequential_bart/load-pbart.R')
+## set.seed(21)
+## base <- BartMI(bartmpicstem, xx=pre$X.base, yy=NULL, datatype=rep(0, 6),
+##                type=0, numskip=20, burn=1000)
+## coarsen the imputed data same way as observed example data
+## base$imputed5[which(base$imputed5[ , 5]<1), 5] <- 1
+## base$imputed5[which(base$imputed5[ , 5]>8), 5] <- 8
+## base$imputed5[ , 5] <- round(base$imputed5[ , 5])
+## base$imputed5[which(base$imputed5[ , 6]<1), 6] <- 1
+## base$imputed5[which(base$imputed5[ , 6]>8), 6] <- 8
+## base$imputed5[ , 6] <- round(base$imputed5[ , 6])
+## pre$X.base <- base$imputed5
+## dimnames(pre$X.base)[[2]] <- c('t', 'v', 'N', 'tx', 'number', 'size')
+
+set.seed(99)
+post <- recur.bart(y.train=pre$y.train, x.train=pre$X.train, x.test=pre$X.base)
+
+K <- post$K
+M <- 1000
+haz.Pl <- matrix(0, nrow=M, ncol=K)
+haz.B6 <- matrix(0, nrow=M, ncol=K)
+haz.Th <- matrix(0, nrow=M, ncol=K)
+
+for(i in 1:N) {
+    j <- (i-1)*K+1:K
+    haz.Pl <- haz.Pl+post$haz.test[1:M, j]/N
+    haz.B6 <- haz.B6+post$haz.test[1:M, j+N*K]/N
+    haz.Th <- haz.Th+post$haz.test[1:M, j+N*K*2]/N
+}
+
+haz.Pl.m <- apply(haz.Pl, 2, mean)
+haz.B6.m <- apply(haz.B6, 2, mean)
+haz.Th.m <- apply(haz.Th, 2, mean)
+
+plot(post$times, haz.Pl.m, type='l',
+     main='Treatment arms: Placebo (black), B6 (red), Thiotepa (blue)',
+     ylab=expression(lambda(t)), xlab='t (months)',
+     ylim=c(0, max(c(haz.Pl.m, haz.B6.m, haz.Th.m))))
+points(post$times, haz.B6.m, type='l', col='red')
+points(post$times, haz.Th.m, type='l', col='blue')
+
+plot(post$times, apply(1*((haz.Th/haz.Pl) < 1), 2, mean),
+     type='l', ylim=c(0, 1),
+     main='Treatment arms: Thiotepa vs. Placebo',
+     ylab=expression(P(RR(t)<1)), xlab='t (months)')
+     points(c(0, max(post$times)), c(0.5, 0.5), type='l', col='gray')
+
+rr.Th.Pl.m <- apply(haz.Th/haz.Pl, 2, mean)
+rr.Th.Pl.l <- apply(haz.Th/haz.Pl, 2, quantile, probs=0.25)
+rr.Th.Pl.u <- apply(haz.Th/haz.Pl, 2, quantile, probs=0.75)
+plot(post$times, rr.Th.Pl.m, type='l', log='y',
+     main='Treatment arms: Thiotepa vs. Placebo with 50% CI',
+     ylab=expression(RR(t)), xlab='t (months)', ylim=c(0.625, 1.6))
+points(post$times, rr.Th.Pl.l, type='l', col='gray')
+points(post$times, rr.Th.Pl.u, type='l', col='gray')
+points(c(0, max(post$times)), c(1, 1), type='l')
+
+rr.Th.B6.m <- apply(haz.Th/haz.B6, 2, mean)
+rr.Th.B6.l <- apply(haz.Th/haz.B6, 2, quantile, probs=0.25)
+rr.Th.B6.u <- apply(haz.Th/haz.B6, 2, quantile, probs=0.75)
+plot(post$times, rr.Th.B6.m, type='l', log='y',
+     main='Treatment arms: Thiotepa vs. Vitamin B6 with 50% CI',
+     ylab=expression(RR(t)), xlab='t (months)', ylim=c(0.625, 1.6))
+points(post$times, rr.Th.B6.l, type='l', col='gray')
+points(post$times, rr.Th.B6.u, type='l', col='gray')
+points(c(0, max(post$times)), c(1, 1), type='l')
+
+plot(post$times, apply(1*((haz.Th/haz.B6) < 1), 2, mean),
+     type='l', ylim=c(0, 1),
+     main='Treatment arms: Thiotepa vs. Vitamin B6',
+     ylab=expression(P(RR(t)<1)), xlab='t (months)')
+     points(c(0, max(post$times)), c(0.5, 0.5), type='l', col='gray')
 
 }
 }

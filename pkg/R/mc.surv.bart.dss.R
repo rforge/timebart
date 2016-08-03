@@ -29,7 +29,7 @@ mc.surv.bart.dss <- function(
                 if(l[1]==0) l <- k
                 else l <- c(k, l) ## LIFO
 
-                mcparallel({psnice(value=nice);
+                parallel::mcparallel({psnice(value=nice);
                     rpart(post$yhat.train.mean~post$x.train[ , c(k, h)])})
             }
 
@@ -37,7 +37,7 @@ mc.surv.bart.dss <- function(
             else j <- length(l)
 
             if(j==mc.cores | (j>0 & k==K)) {
-                fit <- mccollect()
+                fit <- parallel::mccollect()
 
                 i <- 1
 

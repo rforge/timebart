@@ -21,7 +21,7 @@ mc.surv.bart <- function(
 {
     RNGkind("L'Ecuyer-CMRG")
     set.seed(seed)
-    mc.reset.stream()
+    parallel::mc.reset.stream()
 
     mc.cores.detected <- detectCores()
 
@@ -50,7 +50,7 @@ mc.surv.bart <- function(
     while(mc.ndpost*mc.cores<ndpost) mc.ndpost <- mc.ndpost+keepevery
 
     for(i in 1:mc.cores) {
-        mcparallel({psnice(value=nice);
+        parallel::mcparallel({psnice(value=nice);
               surv.bart(x.train=x.train, y.train=y.train, x.test=x.test,
                         k=k,
                         power=power, base=base,
@@ -64,7 +64,7 @@ mc.surv.bart <- function(
                                           ## capture stdout from first posterior only
     }
 
-    post.list <- mccollect()
+    post.list <- parallel::mccollect()
 
     post <- post.list[[1]]
 

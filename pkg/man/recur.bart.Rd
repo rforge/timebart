@@ -240,6 +240,12 @@ the list has a \code{binaryOffset} component giving the value used,
    \eqn{P(Y=1 | t, x)} you need to apply the normal cdf (\code{pnorm})
    to these values.
 }
+\references{
+Xu, Daniels and Winterstein.  Sequential BART for imputation of missing
+covariates.  Biostatistics 2016 doi: 10.1093/biostatistics/kxw009
+with supplement
+\url{http://biostatistics.oxfordjournals.org/content/early/2016/03/15/biostatistics.kxw009/suppl/DC1}
+ }
 \author{
 Rodney Sparapani: \email{rsparapa@mcw.edu}
 }
@@ -336,7 +342,7 @@ for(i in 1:N) {
     points(pre$times[j], pre$X.base[k+j, 3]+u[i], type='l', col='red')
 }
 
-## impute missing data, for example, via Sequential BART as shown
+## impute missing data via your favorite method such as Sequential BART (see ref above)
 ## library(MASS)
 ## library(Rlab)
 ## library(msm)

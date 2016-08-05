@@ -258,11 +258,8 @@ Rodney Sparapani: \email{rsparapa@mcw.edu}
 require(survival)
 
 subset <- -which(bladder1$stop==0)
-
 bladder0 <- bladder1[subset, ]
-
 id <- unique(sort(bladder0$id))
-
 N <- length(id)
 K <- max(bladder0$enum)
 
@@ -275,7 +272,6 @@ dimnames(delta)[[1]] <- paste0(id)
 X.train <- matrix(NA, nrow=N, ncol=2*K+1) ## add time-dependent cols too
 dimnames(X.train)[[1]] <- paste0(id)
 dimnames(X.train)[[2]] <- c('tx', rep(c('number', 'size'), K))
-##dimnames(X.train)[[2]] <- c('Pl=1,B6=2,Th=3', rep(c('number', 'size'), K))
 
 for(i in 1:N) {
     h <- id[i]
@@ -342,7 +338,22 @@ for(i in 1:N) {
     points(pre$times[j], pre$X.base[k+j, 3]+u[i], type='l', col='red')
 }
 
-## impute missing data via your favorite method such as Sequential BART (see ref above)
+## since BART is essentially a nonparametric function, handling
+## missing data can, in certain circumstances, be as easy as creating
+## a missing "category" for continuous and ordinal variables
+## in the bladder ex, both number and size are recorded as integers
+## from 1 to 8 so a reasonable missing category might be 0 or 9
+## however, we really want to create a generous amount of
+## separation between observed and missing data to give BART a
+## reasonable chance of splitting between them; but, perhaps, not too
+## generous otherwise you may sacrfice performance within the
+## observed data range; the usual caveats apply and it is always
+## a good idea to explore more sophisticated methods (see below)    
+pre$X.base[which(is.na(pre$X.base[ , 5])), 5] <- -2
+pre$X.base[which(is.na(pre$X.base[ , 6])), 6] <- -2
+    
+## or impute missing data via your favorite method
+## such as Sequential BART (see ref above)
 ## library(MASS)
 ## library(Rlab)
 ## library(msm)
@@ -362,6 +373,9 @@ for(i in 1:N) {
 
 set.seed(99)
 post <- recur.bart(y.train=pre$y.train, x.train=pre$X.train, x.test=pre$X.base)
+## depending on your performance, you may want to run in parallel if available
+## post <- mc.recur.bart(y.train=pre$y.train, x.train=pre$X.train, x.test=pre$X.base,
+##                       mc.cores=16, seed=99)
 
 K <- post$K
 M <- 1000
@@ -381,7 +395,7 @@ haz.B6.m <- apply(haz.B6, 2, mean)
 haz.Th.m <- apply(haz.Th, 2, mean)
 
 plot(post$times, haz.Pl.m, type='l',
-     main='Treatment arms: Placebo (black), B6 (red), Thiotepa (blue)',
+     main='bladder ex: Placebo (black), B6 (red), Thiotepa (blue)',
      ylab=expression(lambda(t)), xlab='t (months)',
      ylim=c(0, max(c(haz.Pl.m, haz.B6.m, haz.Th.m))))
 points(post$times, haz.B6.m, type='l', col='red')
@@ -389,7 +403,7 @@ points(post$times, haz.Th.m, type='l', col='blue')
 
 plot(post$times, apply(1*((haz.Th/haz.Pl) < 1), 2, mean),
      type='l', ylim=c(0, 1),
-     main='Treatment arms: Thiotepa vs. Placebo',
+     main='bladder ex: Thiotepa vs. Placebo',
      ylab=expression(P(RR(t)<1)), xlab='t (months)')
      points(c(0, max(post$times)), c(0.5, 0.5), type='l', col='gray')
 
@@ -397,7 +411,7 @@ rr.Th.Pl.m <- apply(haz.Th/haz.Pl, 2, mean)
 rr.Th.Pl.l <- apply(haz.Th/haz.Pl, 2, quantile, probs=0.25)
 rr.Th.Pl.u <- apply(haz.Th/haz.Pl, 2, quantile, probs=0.75)
 plot(post$times, rr.Th.Pl.m, type='l', log='y',
-     main='Treatment arms: Thiotepa vs. Placebo with 50% CI',
+     main='bladder ex: Thiotepa vs. Placebo with 50% CI',
      ylab=expression(RR(t)), xlab='t (months)', ylim=c(0.625, 1.6))
 points(post$times, rr.Th.Pl.l, type='l', col='gray')
 points(post$times, rr.Th.Pl.u, type='l', col='gray')
@@ -407,7 +421,7 @@ rr.Th.B6.m <- apply(haz.Th/haz.B6, 2, mean)
 rr.Th.B6.l <- apply(haz.Th/haz.B6, 2, quantile, probs=0.25)
 rr.Th.B6.u <- apply(haz.Th/haz.B6, 2, quantile, probs=0.75)
 plot(post$times, rr.Th.B6.m, type='l', log='y',
-     main='Treatment arms: Thiotepa vs. Vitamin B6 with 50% CI',
+     main='bladder ex: Thiotepa vs. Vitamin B6 with 50% CI',
      ylab=expression(RR(t)), xlab='t (months)', ylim=c(0.625, 1.6))
 points(post$times, rr.Th.B6.l, type='l', col='gray')
 points(post$times, rr.Th.B6.u, type='l', col='gray')
@@ -415,7 +429,7 @@ points(c(0, max(post$times)), c(1, 1), type='l')
 
 plot(post$times, apply(1*((haz.Th/haz.B6) < 1), 2, mean),
      type='l', ylim=c(0, 1),
-     main='Treatment arms: Thiotepa vs. Vitamin B6',
+     main='bladder ex: Thiotepa vs. Vitamin B6',
      ylab=expression(P(RR(t)<1)), xlab='t (months)')
      points(c(0, max(post$times)), c(0.5, 0.5), type='l', col='gray')
 

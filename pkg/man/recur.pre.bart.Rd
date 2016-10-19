@@ -6,7 +6,7 @@ Recurrent event data contained in \eqn{(t_1,\delta_1, ..., t_k,\delta_k, x)} mus
 suitable for the BART model; see \code{recur.bart} for more details.
 }
 \usage{
-recur.pre.bart( times, delta, x.train=NULL, probs=c(0.15, 0.15) )
+recur.pre.bart( times, delta, x.train=NULL, probs=c(0.15, 0.15), baseline=FALSE )
 }
 \arguments{
    \item{times}{
@@ -46,6 +46,7 @@ recur.pre.bart( times, delta, x.train=NULL, probs=c(0.15, 0.15) )
      the censoring increases with time (if it does at all) to a maximum
      value controlled by the first argument contained in \code{probs}. }
 
+   \item{baseline}{workaround bug}
 }
 
 \value{

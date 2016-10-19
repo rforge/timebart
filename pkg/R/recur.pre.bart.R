@@ -21,7 +21,7 @@ recur.pre.bart <- function(
                       ## the maximum amount to adjust the quantile
                       ## for the middle pattern due to censoring
                       ## first decreases v(t) and the second increases N(t-)
-
+, baseline=FALSE
                       ##x.test=NULL
                       ## matrix of covariate regressors at X.test settings
                       ## does nothing for now since there is no obvious basis for v(t) and N(t-)
@@ -130,6 +130,7 @@ recur.pre.bart <- function(
     }
 
     ## generate X.base from X.train with v(t) & N(t-): baseline of the "middle" pattern
+if(baseline) {
     X.base <- cbind(X.test)
 
     dimnames(X.base)[[2]] <- dimnames(X.train)[[2]]
@@ -169,6 +170,11 @@ recur.pre.bart <- function(
             else if(j>1) if(X.base[h, 3]>X.base[h-1, 3]) t.0 <- X.base[h-1, 1]
         }
     }
+    } else {
+        X.base <- NULL
+        pattern <- NULL
+        sojourn <- NULL
+        }
 
 ## automated X.test creation is not feasible since there is no obvious basis for v(t) and N(t-)
     ## if(p==0 | length(x.test)>0) {

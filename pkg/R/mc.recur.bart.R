@@ -1,9 +1,10 @@
 ## run BART with recurrent events in parallel
-## 07/13/16
 
 mc.recur.bart <- function(
     x.train, y.train=NULL, times=NULL, delta=NULL,
     x.test = matrix(0.0, 0L, 0L),
+    x.test.short = FALSE, ## you may not need the whole grid
+    keepcall = FALSE, ## the call object can get rather large
     k = 2.0, ## BEWARE: do NOT use k for other purposes below
     power = 2.0, base = 0.95,
     binaryOffset = NULL,
@@ -51,8 +52,9 @@ mc.recur.bart <- function(
 
     for(i in 1:mc.cores) {
        parallel::mcparallel({psnice(value=nice);
-                   recur.bart(x.train=x.train, y.train=y.train, x.test=x.test,
-                        k=k,
+                   recur.bart(x.train=x.train, y.train=y.train,
+                              x.test=x.test, x.test.short=x.test.short,
+                        k=k, keepcall=keepcall,
                         power=power, base=base,
                         binaryOffset=binaryOffset,
                         ntree=ntree,
@@ -77,8 +79,8 @@ mc.recur.bart <- function(
 
             if(length(post$yhat.test)>0) {
                 post$yhat.test <- rbind(post$yhat.test, post.list[[i]]$yhat.test)
-                post$cum.test <- rbind(post$cum.test, post.list[[i]]$cum.test)
                 post$haz.test <- rbind(post$haz.test, post.list[[i]]$haz.test)
+                if(!x.test.short) post$cum.test <- rbind(post$cum.test, post.list[[i]]$cum.test)
             }
 
             if(length(post$sigma)>0)
@@ -93,8 +95,8 @@ mc.recur.bart <- function(
 
         if(length(post$yhat.test)>0) {
             post$yhat.test.mean <- apply(post$yhat.test, 2, mean)
-            post$cum.test.mean <- apply(post$cum.test, 2, mean)
             post$haz.test.mean <- apply(post$haz.test, 2, mean)
+            if(!x.test.short) post$cum.test.mean <- apply(post$cum.test, 2, mean)
         }
 
         return(post)

@@ -1,9 +1,10 @@
 ## run BART with recurrent events
-## 7/12/16
 
 recur.bart <- function(
     x.train, y.train=NULL, times=NULL, delta=NULL,
     x.test = matrix(0.0, 0L, 0L),
+    x.test.short = FALSE, ## you may not need the whole grid
+    keepcall = FALSE, ## the call object can get rather large
     k = 2.0, ## BEWARE: do NOT use k for other purposes below
     power = 2.0, base = 0.95,
     binaryOffset = NULL,
@@ -41,30 +42,30 @@ recur.bart <- function(
         K     <- length(times)
     }
 
-    cat('dbarts\n')
+    ##cat('dbarts\n')
 
     post <- bart(x.train=x.train, y.train=y.train, x.test=x.test,
                         sigest = NA_real_, sigdf = 3.0, sigquant = 0.90,
-                        k=k,
+                        k=k, keepcall=keepcall,
                         power=power, base=base,
                         binaryOffset=binaryOffset,
                         ntree=ntree,
                         ndpost=ndpost, nskip=nskip,
-                        printevery=printevery, keepevery=1L, keeptrainfits=keeptrainfits,
+                        printevery=printevery, keepevery=keepevery, keeptrainfits=keeptrainfits,
                         usequants=usequants, numcut=numcut, printcutoffs=printcutoffs,
                         verbose=verbose)
 
-    post$call <- NULL
+    ##post$call <- NULL
     post$binaryOffset <- NULL
     post$times <- times
     post$K <- K
     post$x.train <- x.train
 
-    if(keepevery>1L) {
-        thin <- seq(1, ndpost, keepevery)
-        post$yhat.train <- post$yhat.train[thin, ]
-        post$varcount <- post$varcount[thin, ]
-    }
+    ## if(keepevery>1L) {
+    ##     thin <- seq(1, ndpost, keepevery)
+    ##     post$yhat.train <- post$yhat.train[thin, ]
+    ##     post$varcount <- post$varcount[thin, ]
+    ## }
 
     post$cum.train <- pnorm(post$yhat.train)
     post$haz.train <- post$cum.train
@@ -96,21 +97,25 @@ recur.bart <- function(
     ## }
 
     if(length(x.test)>0) {
-        if(keepevery>1L) post$yhat.test <- post$yhat.test[thin, ]
+        ##if(keepevery>1L) post$yhat.test <- post$yhat.test[thin, ]
 
         post$x.test <- x.test
-        post$cum.test <- pnorm(post$yhat.test)
-        post$haz.test <- post$cum.test
+        
+        post$haz.test <- pnorm(post$yhat.test)
 
-        H <- nrow(x.test)
+        if(!x.test.short) {
+            post$cum.test <- post$haz.test
 
-        for(h in 1:H) {
-            j <- which(x.test[h, 1]==times) ## for grid points only
+            H <- nrow(x.test)
 
-            if(j==1) post$haz.test[ , h] <- post$haz.test[ , h]/times[1]
-            else {
-                post$haz.test[ , h] <- post$haz.test[ , h]/(times[j]-times[j-1])
-                post$cum.test[ , h] <- post$cum.test[ , h-1]+post$cum.test[ , h]
+            for(h in 1:H) {
+                j <- which(x.test[h, 1]==times) ## for grid points only
+
+                if(j==1) post$haz.test[ , h] <- post$haz.test[ , h]/times[1]
+                else {
+                    post$haz.test[ , h] <- post$haz.test[ , h]/(times[j]-times[j-1])
+                    post$cum.test[ , h] <- post$cum.test[ , h-1]+post$cum.test[ , h]
+                }
             }
         }
 

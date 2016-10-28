@@ -43,7 +43,7 @@ response case, \eqn{f} is the sum of many tree models.  }
 \usage{
 
 recur.bart(x.train, y.train=NULL, times=NULL, delta=NULL, x.test=matrix(0.0,0,0),
-           x.test.short=FALSE, keepcall=FALSE,
+           x.test.nogrid=FALSE, keepcall=FALSE,
            k=2.0, power=2.0, base=.95, binaryOffset=NULL,
            ntree=50, ndpost=10000, nskip=250, printevery=100, keepevery=10,
            keeptrainfits=TRUE, usequants=FALSE, numcut=100, printcutoffs=0,
@@ -54,7 +54,7 @@ recur.bart(x.train, y.train=NULL, times=NULL, delta=NULL, x.test=matrix(0.0,0,0)
          )
 
 mc.recur.bart(x.train, y.train=NULL, times=NULL, delta=NULL, x.test=matrix(0.0,0,0),
-              x.test.short=FALSE, keepcall=FALSE,
+              x.test.nogrid=FALSE, keepcall=FALSE,
               k=2.0, power=2.0, base=.95, binaryOffset=NULL,
               ntree=50, ndpost=10000, nskip=250, printevery=100, keepevery=10,
               keeptrainfits=TRUE, usequants=FALSE, numcut=100, printcutoffs=0,
@@ -102,7 +102,7 @@ that the definition of \code{x.train} is dependent on whether
    \code{recur.bart} will generate draws of \eqn{f(t, x)} for each \eqn{x} which is a row of x.test.
    }
 
-   \item{x.test.short}{
+   \item{x.test.nogrid}{
      Occasionally, you do not need the entire time grid for
      \code{x.test}.  If so, then for performance reasons, you can set this argument to \code{TRUE}.
    }

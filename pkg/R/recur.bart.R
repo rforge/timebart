@@ -3,7 +3,7 @@
 recur.bart <- function(
     x.train, y.train=NULL, times=NULL, delta=NULL,
     x.test = matrix(0.0, 0L, 0L),
-    x.test.short = FALSE, ## you may not need the whole grid
+    x.test.nogrid = FALSE, ## you may not need the whole grid
     keepcall = FALSE, ## the call object can get rather large
     k = 2.0, ## BEWARE: do NOT use k for other purposes below
     power = 2.0, base = 0.95,
@@ -103,7 +103,7 @@ recur.bart <- function(
         
         post$haz.test <- pnorm(post$yhat.test)
 
-        if(!x.test.short) {
+        if(!x.test.nogrid) {
             post$cum.test <- post$haz.test
 
             H <- nrow(x.test)

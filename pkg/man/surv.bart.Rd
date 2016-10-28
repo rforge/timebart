@@ -43,7 +43,7 @@ response case, \eqn{f} is the sum of many tree models.  }
 \usage{
 
 surv.bart( x.train, y.train=NULL, times=NULL, delta=NULL, x.test=matrix(0.0,0,0),
-           k=2.0, power=2.0, base=.95, binaryOffset=NULL,
+           keepcall=FALSE, k=2.0, power=2.0, base=.95, binaryOffset=NULL,
            ntree=50, ndpost=10000, nskip=250, printevery=100, keepevery=10,
            keeptrainfits=TRUE, usequants=FALSE, numcut=100, printcutoffs=0,
            verbose=TRUE, 
@@ -54,7 +54,7 @@ surv.bart( x.train, y.train=NULL, times=NULL, delta=NULL, x.test=matrix(0.0,0,0)
          )
 
 mc.surv.bart( x.train, y.train=NULL, times=NULL, delta=NULL, x.test=matrix(0.0,0,0),
-              k=2.0, power=2.0, base=.95, binaryOffset=NULL,
+              keepcall=FALSE, k=2.0, power=2.0, base=.95, binaryOffset=NULL,
               ntree=50, ndpost=10000, nskip=250, printevery=100, keepevery=10,
               keeptrainfits=TRUE, usequants=FALSE, numcut=100, printcutoffs=0,
               verbose=TRUE, 
@@ -100,6 +100,11 @@ that the definition of \code{x.train} is dependent on whether
    Explanatory variables for test (out of sample) data.\cr
    Must be a matrix and have the same structure as x.train.\cr
    \code{surv.bart} will generate draws of \eqn{f(t, x)} for each \eqn{x} which is a row of x.test.
+   }
+
+   \item{keepcall}{
+     Logical; if \code{FALSE}, returned object will have \code{call} set to
+          \code{call("NULL")}, otherwise the call used to instantiate BART.
    }
 
    \item{k}{

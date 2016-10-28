@@ -1,9 +1,9 @@
 ## run BART and generate survival in parallel
-## 07/12/16
 
 mc.surv.bart <- function(
     x.train, y.train=NULL, times=NULL, delta=NULL,
     x.test = matrix(0.0, 0L, 0L),
+    keepcall = FALSE, ## the call object can get rather large
     k = 2.0, ## BEWARE: do NOT use k for other purposes below
     power = 2.0, base = 0.95,
     binaryOffset = NULL,
@@ -52,7 +52,7 @@ mc.surv.bart <- function(
     for(i in 1:mc.cores) {
         parallel::mcparallel({psnice(value=nice);
               surv.bart(x.train=x.train, y.train=y.train, x.test=x.test,
-                        k=k,
+                        keepcall=keepcall, k=k,
                         power=power, base=base,
                         binaryOffset=binaryOffset,
                         ntree=ntree,

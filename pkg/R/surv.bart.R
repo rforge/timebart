@@ -4,6 +4,7 @@
 surv.bart <- function(
     x.train, y.train=NULL, times=NULL, delta=NULL,
     x.test = matrix(0.0, 0L, 0L),
+    keepcall = FALSE, ## the call object can get rather large
     k = 2.0, ## BEWARE: do NOT use k for other purposes below
     power = 2.0, base = 0.95,
     binaryOffset = NULL,
@@ -42,30 +43,30 @@ surv.bart <- function(
         K     <- length(times)
     }
 
-    cat('timebart::surv.bart\n')
+    ##cat('timebart::surv.bart\n')
 
     post <- bart(x.train=x.train, y.train=y.train, x.test=x.test,
-                        k=k,
+                        keepcall=keepcall, k=k,
                         power=power, base=base,
                         binaryOffset=binaryOffset,
                         ntree=ntree,
                         ndpost=ndpost, nskip=nskip,
-                        printevery=printevery, keepevery=1L, keeptrainfits=keeptrainfits,
+                        printevery=printevery, keepevery=keepevery, keeptrainfits=keeptrainfits,
                         usequants=usequants, numcut=numcut, printcutoffs=printcutoffs,
                         verbose=verbose)
 
-    post$call <- NULL
+    ##post$call <- NULL
     post$binaryOffset <- NULL
     post$id <- id
     post$times <- times
     post$K <- K
     post$x.train <- x.train
 
-    if(keepevery>1L) { ## thinning with dbarts not available
-        thin <- seq(1, ndpost, keepevery)
-        if(keeptrainfits) post$yhat.train <- post$yhat.train[thin, ]
-        post$varcount <- post$varcount[thin, ]
-    }
+    ## if(keepevery>1L) { ## thinning with dbarts not available
+    ##     thin <- seq(1, ndpost, keepevery)
+    ##     if(keeptrainfits) post$yhat.train <- post$yhat.train[thin, ]
+    ##     post$varcount <- post$varcount[thin, ]
+    ## }
 
     if(keeptrainfits) {
         post$surv.train <- 1-pnorm(post$yhat.train)
@@ -83,7 +84,7 @@ surv.bart <- function(
         post$x.test <- x.test
         H <- nrow(x.test)/K ## the number of different settings
 
-        if(keepevery>1L) post$yhat.test <- post$yhat.test[thin, ]
+        ##if(keepevery>1L) post$yhat.test <- post$yhat.test[thin, ]
 
         post$surv.test <- 1-pnorm(post$yhat.test)
 

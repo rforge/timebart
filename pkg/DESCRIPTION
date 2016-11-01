@@ -8,7 +8,7 @@ Maintainer: Rodney Sparapani <rsparapa@mcw.edu>
 Description: Bayesian Additive Regression Trees (BART) have been shown
 	to provide flexible nonparametric modeling of covariates to
 	binary and continuous outcomes.  This R package extends BART
-	to time-to-event outcomes with right censoring.
+	to time-to-event outcomes with right censoring including recurrent events.
 License: GPL (>= 2)
 URL: http://timebart.r-forge.r-project.org
 Packaged: 2016-07-13 20:03:56 UTC; rsparapa

@@ -2,7 +2,7 @@ Package: timebart
 Version: 1.0
 Depends: parallel, tools, dbarts (>= 0.8-6), rpart
 Date: 2016-11-03
-Title: Timebart: Survival Analysis with BART
+Title: timebart: Survival Analysis with BART
 Author: Rodney Sparapani <rsparapa@mcw.edu>
 Maintainer: Rodney Sparapani <rsparapa@mcw.edu>
 Description: Bayesian Additive Regression Trees (BART) have been shown

@@ -1,7 +1,7 @@
 Package: timebart
 Version: 1.0
 Depends: parallel, tools, dbarts (>= 0.8-6), rpart
-Date: 2016-07-13
+Date: 2016-11-03
 Title: Timebart: Survival Analysis with BART
 Author: Rodney Sparapani <rsparapa@mcw.edu>
 Maintainer: Rodney Sparapani <rsparapa@mcw.edu>
@@ -12,7 +12,7 @@ Description: Bayesian Additive Regression Trees (BART) have been shown
 	recurrent events.
 License: GPL (>= 2)
 URL: http://timebart.r-forge.r-project.org
-Packaged: 2016-07-13 20:03:56 UTC; rsparapa
+Packaged: 2016-11-02 20:03:56 UTC; rsparapa
 Repository: r-forge
-Date/Publication: 2016-07-13
+Date/Publication: 2016-11-03
 NeedsCompilation: no

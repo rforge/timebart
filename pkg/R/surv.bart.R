@@ -1,5 +1,4 @@
 ## run BART and generate survival
-## 07/13/16
 
 surv.bart <- function(
     x.train, y.train=NULL, times=NULL, delta=NULL,

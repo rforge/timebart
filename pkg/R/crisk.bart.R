@@ -49,7 +49,7 @@ crisk.bart <- function(
         K     <- length(times)
     }
 
-    post1 <- bart(x.train=x.train, y.train=y.train1, x.test=x.test,
+    cause1 <- surv.bart(x.train=x.train, y.train=y.train1, x.test=x.test,
                         keepcall=keepcall, k=k,
                         power=power, base=base,
                         binaryOffset=binaryOffset1,
@@ -59,9 +59,9 @@ crisk.bart <- function(
                         usequants=usequants, numcut=numcut, printcutoffs=printcutoffs,
                         verbose=verbose)
 
-    forced <- which(y.train1==0)
+    cond <- which(y.train1==0)
     
-    post2 <- bart(x.train=x.train[forced, ], y.train=y.train2[forced, ], x.test=x.test,
+    cause2 <- surv.bart(x.train=x.train[cond, ], y.train=y.train2[cond, ], x.test=x.test,
                         keepcall=keepcall, k=k,
                         power=power, base=base,
                         binaryOffset=binaryOffset2,
@@ -71,45 +71,5 @@ crisk.bart <- function(
                         usequants=usequants, numcut=numcut, printcutoffs=printcutoffs,
                         verbose=verbose)
 
-    ##post$call <- NULL
-    post$binaryOffset <- NULL
-    post$id <- id
-    post$times <- times
-    post$K <- K
-    post$x.train <- x.train
-
-    ## if(keepevery>1L) { ## thinning with dbarts not available
-    ##     thin <- seq(1, ndpost, keepevery)
-    ##     if(keeptrainfits) post$yhat.train <- post$yhat.train[thin, ]
-    ##     post$varcount <- post$varcount[thin, ]
-    ## }
-
-    if(keeptrainfits) {
-        post$surv.train <- 1-pnorm(post$yhat.train)
-
-        H <- nrow(x.train)/K ## the number of different settings
-
-        for(h in 1:H) for(j in 2:K)
-                      post$surv.train[ , K*(h-1)+j] <-
-                          post$surv.train[ , K*(h-1)+j-1]*post$surv.train[ , K*(h-1)+j]
-
-        post$surv.train.mean <- apply(post$surv.train, 2, mean)
-    }
-
-    if(length(x.test)>0) {
-        post$x.test <- x.test
-        H <- nrow(x.test)/K ## the number of different settings
-
-        ##if(keepevery>1L) post$yhat.test <- post$yhat.test[thin, ]
-
-        post$surv.test <- 1-pnorm(post$yhat.test)
-
-        for(h in 1:H) for(j in 2:K)
-                post$surv.test[ , K*(h-1)+j] <-
-                    post$surv.test[ , K*(h-1)+j-1]*post$surv.test[ , K*(h-1)+j]
-
-        post$surv.test.mean <- apply(post$surv.test, 2, mean)
-    }
-
-    return(post)
+    return(list(cause1=cause1, cause2=cause2, cond=cond))
 }

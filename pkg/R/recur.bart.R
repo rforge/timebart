@@ -20,6 +20,11 @@ recur.bart <- function(
     )
 {
     if(length(y.train)==0) {
+        if(length(binaryOffset)==0) {
+            lambda <- sum(delta)/sum(apply(times, 1, max))
+            binaryOffset <- qnorm(1-exp(-lambda))
+        }
+
         recur <- recur.pre.bart(times, delta, x.train, x.test)
 
         y.train <- recur$y.train
@@ -28,12 +33,6 @@ recur.bart <- function(
 
         times   <- recur$times
         K       <- recur$K
-
-        if(length(binaryOffset)==0) {
-            lambda <- sum(delta)/sum(times)
-            delta  <- mean(times[2:K]-times[1:(K-1)])
-            binaryOffset <- qnorm(1-exp(-lambda*delta))
-        }
     }
     else {
         if(length(binaryOffset)==0) binaryOffset <- 0
@@ -41,8 +40,6 @@ recur.bart <- function(
         times <- unique(sort(x.train[ , 1]))
         K     <- length(times)
     }
-
-    ##cat('dbarts\n')
 
     post <- bart(x.train=x.train, y.train=y.train, x.test=x.test,
                         sigest = NA_real_, sigdf = 3.0, sigquant = 0.90,

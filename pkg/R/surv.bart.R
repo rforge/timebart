@@ -20,6 +20,11 @@ surv.bart <- function(
 )
 {
     if(length(y.train)==0) {
+        if(length(binaryOffset)==0) {
+            lambda <- sum(delta)/sum(times)
+            binaryOffset <- qnorm(1-exp(-lambda))
+        }
+        
         surv <- surv.pre.bart(times, delta, x.train, x.test)
 
         y.train <- surv$y.train
@@ -28,12 +33,6 @@ surv.bart <- function(
 
         times   <- surv$times
         K       <- surv$K
-
-        if(length(binaryOffset)==0) {
-            lambda <- sum(delta)/sum(times)
-            delta  <- mean(times[2:K]-times[1:(K-1)])
-            binaryOffset <- qnorm(1-exp(-lambda*delta))
-        }
     }
     else {
         if(length(binaryOffset)==0) binaryOffset <- 0

@@ -1,5 +1,4 @@
 ## run DSS
-## 07/22/16
 
 surv.bart.dss <- function(
     post,          ## posterior from surv.bart/mc.surv.bart

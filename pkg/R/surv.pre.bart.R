@@ -1,6 +1,5 @@
-## 08/31/15
 
-## you call this function before bart()
+## you call this function before surv.bart()
 ## this function takes traditional time/delta
 ## survival variables and regressors (if any)
 ## and it constructs the corresponding

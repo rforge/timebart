@@ -61,7 +61,7 @@ crisk.bart <- function(
 
     cond <- which(y.train1==0)
     
-    cause2 <- surv.bart(x.train=x.train[cond, ], y.train=y.train2[cond, ], x.test=x.test,
+    cause2 <- surv.bart(x.train=x.train[cond, ], y.train=y.train2[cond], x.test=x.test,
                         keepcall=keepcall, k=k,
                         power=power, base=base,
                         binaryOffset=binaryOffset2,

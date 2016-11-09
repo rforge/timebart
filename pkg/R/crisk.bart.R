@@ -76,16 +76,22 @@ crisk.bart <- function(
         post$yhat.test2 <- post2$yhat.test
 
         post$prob.test <- pnorm(post$yhat.test)
-        post$surv.test <- (1-post$prob.test)*(1-pnorm(post$yhat.test2))
+        post$prob.test2 <- pnorm(post$yhat.test2)
+        post$prob.test12 <- matrix(nrow=ndpost %*% keepevery, ncol=H*K)
+        post$surv.test <- (1-post$prob.test)*(1-post$prob.test2)
 
         for(h in 1:H) for(j in 2:K) {
                 l <- K*(h-1)+j
                 
                 post$prob.test[ , l] <- post$prob.test[ , l-1]+post$surv.test[ , l-1]*post$prob.test[ , l]
+                post$prob.test2[ , l] <- post$prob.test2[ , l-1]+post$surv.test[ , l-1]*post$prob.test2[ , l]
+                post$prob.test12[ , l] <- post$prob.test[ , l]+post$prob.test2[ , l]
                 post$surv.test[ , l] <- post$surv.test[ , l-1]*post$surv.test[ , l]
                       }
 
         post$prob.test.mean <- apply(post$prob.test, 2, mean)
+        post$prob.test2.mean <- apply(post$prob.test2, 2, mean)
+        post$prob.test12.mean <- apply(post$prob.test12, 2, mean)
         post$surv.test.mean <- apply(post$surv.test, 2, mean)
     }
 

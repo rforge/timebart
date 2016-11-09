@@ -89,6 +89,12 @@ mc.crisk.bart <- function(
             if(length(post$prob.test)>0)
                 post$prob.test <- rbind(post$prob.test, post.list[[i]]$prob.test)
 
+            if(length(post$prob.test2)>0)
+                post$prob.test2 <- rbind(post$prob.test2, post.list[[i]]$prob.test2)
+
+            if(length(post$prob.test12)>0)
+                post$prob.test12 <- rbind(post$prob.test12, post.list[[i]]$prob.test12)
+
             if(length(post$surv.test)>0)
                 post$surv.test <- rbind(post$surv.test, post.list[[i]]$surv.test)
 
@@ -98,6 +104,12 @@ mc.crisk.bart <- function(
 
         if(length(post$prob.test.mean)>0)
             post$prob.test.mean <- apply(post$prob.test, 2, mean)
+
+        if(length(post$prob.test2.mean)>0)
+            post$prob.test2.mean <- apply(post$prob.test2, 2, mean)
+
+        if(length(post$prob.test12.mean)>0)
+            post$prob.test12.mean <- apply(post$prob.test12, 2, mean)
 
         if(length(post$surv.test.mean)>0)
             post$surv.test.mean <- apply(post$surv.test, 2, mean)

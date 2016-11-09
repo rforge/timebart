@@ -30,24 +30,20 @@ mc.surv.bart <- function(
                        ',\n exceeds the number of cores detected via detectCores() ',
                        'which yields ', mc.cores.detected, ' .'))
 
-    if(length(y.train)==0) {
-        surv <- surv.pre.bart(times, delta, x.train, x.test)
-
-        y.train <- surv$y.train
-        x.train <- surv$X.train
-        x.test  <- surv$X.test
-
-        if(length(binaryOffset)==0) {
-            lambda <- sum(delta)/sum(times)
-            delta  <- mean(surv$times[2:surv$K]-surv$times[1:(surv$K-1)])
-            binaryOffset <- qnorm(1-exp(-lambda*delta))
-        }
-    }
-    else if(length(binaryOffset)==0) binaryOffset <- 0
-
     mc.ndpost <- ((ndpost %/% mc.cores) %/% keepevery)*keepevery
 
     while(mc.ndpost*mc.cores<ndpost) mc.ndpost <- mc.ndpost+keepevery
+
+    if(length(y.train)==0) {
+        pre <- surv.pre.bart(times, delta, x.train, x.test)
+
+        y.train <- pre$y.train
+        x.train <- pre$X.train
+        x.test  <- pre$X.test
+
+        if(length(binaryOffset)==0) binaryOffset <- pre$binaryOffset
+    }
+    else if(length(binaryOffset)==0) binaryOffset <- 0
 
     for(i in 1:mc.cores) {
         parallel::mcparallel({psnice(value=nice);

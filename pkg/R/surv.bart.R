@@ -20,19 +20,16 @@ surv.bart <- function(
 )
 {
     if(length(y.train)==0) {
-        if(length(binaryOffset)==0) {
-            lambda <- sum(delta)/sum(times)
-            binaryOffset <- qnorm(1-exp(-lambda))
-        }
-        
-        surv <- surv.pre.bart(times, delta, x.train, x.test)
+        pre <- surv.pre.bart(times, delta, x.train, x.test)
 
-        y.train <- surv$y.train
-        x.train <- surv$X.train
-        x.test  <- surv$X.test
+        y.train <- pre$y.train
+        x.train <- pre$X.train
+        x.test  <- pre$X.test
 
-        times   <- surv$times
-        K       <- surv$K
+        times   <- pre$times
+        K       <- pre$K
+
+        if(length(binaryOffset)==0) binaryOffset <- pre$binaryOffset
     }
     else {
         if(length(binaryOffset)==0) binaryOffset <- 0
@@ -40,8 +37,6 @@ surv.bart <- function(
         times <- unique(sort(x.train[ , 1]))
         K     <- length(times)
     }
-
-    ##cat('timebart::surv.bart\n')
 
     post <- bart(x.train=x.train, y.train=y.train, x.test=x.test,
                         keepcall=keepcall, k=k,
@@ -53,14 +48,13 @@ surv.bart <- function(
                         usequants=usequants, numcut=numcut, printcutoffs=printcutoffs,
                         verbose=verbose)
 
-    ##post$call <- NULL
-    post$binaryOffset <- NULL
+    post$binaryOffset <- binaryOffset
     post$id <- id
     post$times <- times
     post$K <- K
     post$x.train <- x.train
 
-    ## if(keepevery>1L) { ## thinning with dbarts not available
+    ## if(keepevery>1L) { ## manual thinning needed for dbarts < 0.8-6
     ##     thin <- seq(1, ndpost, keepevery)
     ##     if(keeptrainfits) post$yhat.train <- post$yhat.train[thin, ]
     ##     post$varcount <- post$varcount[thin, ]
@@ -71,9 +65,11 @@ surv.bart <- function(
 
         H <- nrow(x.train)/K ## the number of different settings
 
-        for(h in 1:H) for(j in 2:K)
-                      post$surv.train[ , K*(h-1)+j] <-
-                          post$surv.train[ , K*(h-1)+j-1]*post$surv.train[ , K*(h-1)+j]
+        for(h in 1:H) for(j in 2:K) {
+                l <- K*(h-1)+j
+
+                post$surv.train[ , l] <- post$surv.train[ , l-1]*post$surv.train[ , l]
+                      }
 
         post$surv.train.mean <- apply(post$surv.train, 2, mean)
     }
@@ -86,9 +82,11 @@ surv.bart <- function(
 
         post$surv.test <- 1-pnorm(post$yhat.test)
 
-        for(h in 1:H) for(j in 2:K)
-                post$surv.test[ , K*(h-1)+j] <-
-                    post$surv.test[ , K*(h-1)+j-1]*post$surv.test[ , K*(h-1)+j]
+        for(h in 1:H) for(j in 2:K) {
+                l <- K*(h-1)+j
+
+                post$surv.test[ , l] <- post$surv.test[ , l-1]*post$surv.test[ , l]
+                      }
 
         post$surv.test.mean <- apply(post$surv.test, 2, mean)
     }

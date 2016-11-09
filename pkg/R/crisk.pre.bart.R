@@ -1,9 +1,9 @@
 
 ## you call this function before crisk.bart()
 ## this function takes traditional time/delta
-## survival variables and regressors (if any)
+## competing risk variables and regressors (if any)
 ## and it constructs the corresponding
-## X.train, y.train1, y.train2, and X.test approriate for use with bart()
+## X.train, y.train, y.train2, and X.test approriate for use with bart()
 
 crisk.pre.bart <- function(
                       times,
@@ -24,7 +24,8 @@ crisk.pre.bart <- function(
     ## can be extended later
     ## most likely via the alternative counting process notation
 
-    stopifnot(all(unique(sort(delta))==0:2))
+    if(!all(unique(sort(delta))==0:2)) 
+        stop('delta must be coded as: 0(censored), 1(cause of interest) or 2(other cause)')
         
     pre <- surv.pre.bart(times=times, 1*(delta==1), x.train=x.train, x.test=x.test)
 
@@ -33,6 +34,7 @@ crisk.pre.bart <- function(
     pre2 <- surv.pre.bart(times=times, 1*(delta==2))
     
     pre$y.train2 <- pre2$y.train
+    pre$binaryOffset2 <- pre2$binaryOffset
 
     return(pre)
 }

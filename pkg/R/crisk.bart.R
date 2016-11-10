@@ -77,7 +77,7 @@ crisk.bart <- function(
 
         post$prob.test <- pnorm(post$yhat.test)
         post$prob.test2 <- pnorm(post$yhat.test2)
-        post$prob.test12 <- matrix(nrow=ndpost %*% keepevery, ncol=H*K)
+        post$prob.test12 <- matrix(nrow=ndpost %/% keepevery, ncol=H*K)
         post$surv.test <- (1-post$prob.test)*(1-post$prob.test2)
 
         for(h in 1:H) for(j in 2:K) {

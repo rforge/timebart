@@ -45,6 +45,14 @@ mc.surv.bart <- function(
     }
     else if(length(binaryOffset)==0) binaryOffset <- 0
 
+    Mx <- 2^31-1
+    Nx <- nrow(x.train)
+    if(Nx*ndpost>Mx) warning('nrow(x.train)*ndpost>2Gi: due to the 2Gi limit in sendMaster,\n',
+                             '(unless this limit was increased) reduce ndpost to ', Mx %/% Nx)
+    Nx <- nrow(x.test)
+    if(Nx*ndpost>Mx) warning('nrow(x.test)*ndpost>2Gi: due to the 2Gi limit in sendMaster,\n',
+                             '(unless this limit was increased) reduce ndpost to ', Mx %/% Nx)
+
     for(i in 1:mc.cores) {
         parallel::mcparallel({psnice(value=nice);
               surv.bart(x.train=x.train, y.train=y.train, x.test=x.test,

@@ -23,7 +23,6 @@ mc.crisk.bart <- function(
     set.seed(seed)
     parallel::mc.reset.stream()
 
-
     if(length(y.train)==0) {
         pre <- crisk.pre.bart(times, delta, x.train, x.test)
 
@@ -49,25 +48,25 @@ mc.crisk.bart <- function(
 
     Mx <- 2^31-1
     Nx <- nrow(x.test)
-    if(Nx*ndpost>Mx) {
+    if(Nx>Mx%/%ndpost) {
         ndpost <- Mx %/% Nx
-        print('nrow(x.test)*ndpost>2Gi: due to the 2Gi limit in sendMaster,\n',
-              '(unless this limit was increased): reducing ndpost to ', ndpost)
+        message('nrow(x.test)*ndpost>2Gi: due to the 2Gi limit in sendMaster,\n',
+                '(unless this limit was increased): reducing ndpost to ', ndpost)
     }
     
     Nx <- nrow(x.train)
-    if(Nx*ndpost>Mx) {
+    if(Nx>Mx%/%ndpost) {
         ndpost <- Mx %/% Nx
-        print('nrow(x.train)*ndpost>2Gi: due to the 2Gi limit in sendMaster,\n',
-              '(unless this limit was increased): reducing ndpost to ', ndpost)
+        message('nrow(x.test)*ndpost>2Gi: due to the 2Gi limit in sendMaster,\n',
+                '(unless this limit was increased): reducing ndpost to ', ndpost)
     }
     
     mc.cores.detected <- detectCores()
 
     if(mc.cores>mc.cores.detected) {
-        print(paste0('The number of cores requested, ', mc.cores,
+        message('The number of cores requested, ', mc.cores,
                        ',\n exceeds the number of cores detected via detectCores() ',
-                       'reducing to ', mc.cores.detected))
+                       'reducing to ', mc.cores.detected)
         mc.cores <- mc.cores.detected
     }
 

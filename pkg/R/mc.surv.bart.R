@@ -23,17 +23,6 @@ mc.surv.bart <- function(
     set.seed(seed)
     parallel::mc.reset.stream()
 
-    mc.cores.detected <- detectCores()
-
-    if(mc.cores>mc.cores.detected)
-        warning(paste0('The number of cores requested, mc.cores=', mc.cores,
-                       ',\n exceeds the number of cores detected via detectCores() ',
-                       'which yields ', mc.cores.detected, ' .'))
-
-    mc.ndpost <- ((ndpost %/% mc.cores) %/% keepevery)*keepevery
-
-    while(mc.ndpost*mc.cores<ndpost) mc.ndpost <- mc.ndpost+keepevery
-
     if(length(y.train)==0) {
         pre <- surv.pre.bart(times, delta, x.train, x.test)
 
@@ -46,12 +35,32 @@ mc.surv.bart <- function(
     else if(length(binaryOffset)==0) binaryOffset <- 0
 
     Mx <- 2^31-1
-    Nx <- nrow(x.train)
-    if(Nx*ndpost>Mx) warning('nrow(x.train)*ndpost>2Gi: due to the 2Gi limit in sendMaster,\n',
-                             '(unless this limit was increased) reduce ndpost to ', Mx %/% Nx)
     Nx <- nrow(x.test)
-    if(Nx*ndpost>Mx) warning('nrow(x.test)*ndpost>2Gi: due to the 2Gi limit in sendMaster,\n',
-                             '(unless this limit was increased) reduce ndpost to ', Mx %/% Nx)
+    if(Nx*ndpost>Mx) {
+        ndpost <- Mx %/% Nx
+        print('nrow(x.test)*ndpost>2Gi: due to the 2Gi limit in sendMaster,\n',
+              '(unless this limit was increased): reducing ndpost to ', ndpost)
+    }
+    
+    Nx <- nrow(x.train)
+    if(Nx*ndpost>Mx) {
+        ndpost <- Mx %/% Nx
+        print('nrow(x.train)*ndpost>2Gi: due to the 2Gi limit in sendMaster,\n',
+              '(unless this limit was increased): reducing ndpost to ', ndpost)
+    }
+    
+    mc.cores.detected <- detectCores()
+
+    if(mc.cores>mc.cores.detected) {
+        print(paste0('The number of cores requested, ', mc.cores,
+                       ',\n exceeds the number of cores detected via detectCores() ',
+                       'reducing to ', mc.cores.detected))
+        mc.cores <- mc.cores.detected
+    }
+
+    mc.ndpost <- ((ndpost %/% mc.cores) %/% keepevery)*keepevery
+
+    while(mc.ndpost*mc.cores<ndpost) mc.ndpost <- mc.ndpost+keepevery
 
     for(i in 1:mc.cores) {
         parallel::mcparallel({psnice(value=nice);

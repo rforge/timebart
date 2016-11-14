@@ -46,19 +46,15 @@ mc.crisk.bart <- function(
         K     <- length(times)
     }
 
+    H <- 1
     Mx <- 2^31-1
-    Nx <- nrow(x.test)
-    if(Nx>Mx%/%ndpost) {
-        ndpost <- Mx %/% Nx
-        message('nrow(x.test)*ndpost>2Gi: due to the 2Gi limit in sendMaster,\n',
-                '(unless this limit was increased): reducing ndpost to ', ndpost)
-    }
+    Nx <- max(nrow(x.train), nrow(x.test))
     
-    Nx <- nrow(x.train)
     if(Nx>Mx%/%ndpost) {
-        ndpost <- Mx %/% Nx
-        message('nrow(x.test)*ndpost>2Gi: due to the 2Gi limit in sendMaster,\n',
-                '(unless this limit was increased): reducing ndpost to ', ndpost)
+        H <- ceiling(ndpost / (Mx %/% Nx))
+        ndpost <- ndpost %/% H
+        ##nrow*ndpost>2Gi: due to the 2Gi limit in sendMaster
+        ##(unless this limit was increased): reducing ndpost 
     }
     
     mc.cores.detected <- detectCores()
@@ -74,6 +70,9 @@ mc.crisk.bart <- function(
 
     while(mc.ndpost*mc.cores<ndpost) mc.ndpost <- mc.ndpost+keepevery
     
+    post.list <- list()
+        
+    for(h in 1:H) {
         for(i in 1:mc.cores) {
         parallel::mcparallel({psnice(value=nice);
               crisk.bart(x.train=x.train, y.train=y.train, y.train2=y.train2, x.test=x.test,
@@ -88,36 +87,40 @@ mc.crisk.bart <- function(
                         verbose=verbose)}, silent=(i!=1))
                                           ## to avoid duplication of output
                                           ## capture stdout from first posterior only
+        }
+
+        post.list[[h]] <- parallel::mccollect()
     }
 
-    post.list <- parallel::mccollect()
-
-    post <- post.list[[1]]
-
-    if(mc.cores==1) return(post)
+    if(H==1 & mc.cores==1) return(post.list[[1]][[1]])
     else {
-        for(i in 2:mc.cores) {
-            if(length(post$yhat.test)>0)
-                post$yhat.test <- rbind(post$yhat.test, post.list[[i]]$yhat.test)
+        for(h in 1:H) for(i in mc.cores:1) {
+            if(h==1 & i==mc.cores) post <- post.list[[1]][[mc.cores]]
+            else {
+                if(length(post$yhat.test)>0)
+                    post$yhat.test <- rbind(post$yhat.test, post.list[[h]][[i]]$yhat.test)
 
-            if(length(post$yhat.test2)>0)
-                post$yhat.test2 <- rbind(post$yhat.test2, post.list[[i]]$yhat.test2)
+                if(length(post$yhat.test2)>0)
+                    post$yhat.test2 <- rbind(post$yhat.test2, post.list[[h]][[i]]$yhat.test2)
 
-            if(length(post$prob.test)>0)
-                post$prob.test <- rbind(post$prob.test, post.list[[i]]$prob.test)
+                if(length(post$prob.test)>0)
+                    post$prob.test <- rbind(post$prob.test, post.list[[h]][[i]]$prob.test)
 
-            if(length(post$prob.test2)>0)
-                post$prob.test2 <- rbind(post$prob.test2, post.list[[i]]$prob.test2)
+                if(length(post$prob.test2)>0)
+                    post$prob.test2 <- rbind(post$prob.test2, post.list[[h]][[i]]$prob.test2)
 
-            if(length(post$prob.test12)>0)
-                post$prob.test12 <- rbind(post$prob.test12, post.list[[i]]$prob.test12)
+                if(length(post$prob.test12)>0)
+                    post$prob.test12 <- rbind(post$prob.test12, post.list[[h]][[i]]$prob.test12)
 
-            if(length(post$surv.test)>0)
-                post$surv.test <- rbind(post$surv.test, post.list[[i]]$surv.test)
+                if(length(post$surv.test)>0)
+                    post$surv.test <- rbind(post$surv.test, post.list[[h]][[i]]$surv.test)
 
-            post$varcount <- rbind(post$varcount, post.list[[i]]$varcount)
-            post$varcount2 <- rbind(post$varcount2, post.list[[i]]$varcount2)
-        }
+                post$varcount <- rbind(post$varcount, post.list[[h]][[i]]$varcount)
+                post$varcount2 <- rbind(post$varcount2, post.list[[h]][[i]]$varcount2)
+                      }
+
+            post.list[[h]][[i]] <- NULL
+            }
 
         if(length(post$prob.test.mean)>0)
             post$prob.test.mean <- apply(post$prob.test, 2, mean)

@@ -1,7 +1,8 @@
 ## run BART and generate CIF probability for cause 1
 
 crisk.bart <- function(
-    x.train, y.train=NULL, y.train2=NULL, times=NULL, delta=NULL,
+    x.train = matrix(0.0, 0L, 0L),
+    y.train=NULL, y.train2=NULL, times=NULL, delta=NULL,
     x.test = matrix(0.0, 0L, 0L), cond=NULL,
     keepcall = FALSE, ## the call object can get rather large
     k = 2.0, ## BEWARE: do NOT use k for other purposes below
@@ -50,7 +51,7 @@ crisk.bart <- function(
                         usequants=usequants, numcut=numcut, printcutoffs=printcutoffs,
                         verbose=verbose)
 
-    post2 <- bart(x.train=x.train[cond, ], y.train=y.train2[cond], x.test=x.test,
+    post2 <- bart(x.train=as.matrix(x.train[cond, ]), y.train=y.train2[cond], x.test=x.test,
                         keepcall=keepcall, k=k,
                         power=power, base=base,
                         binaryOffset=binaryOffset2,

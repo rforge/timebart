@@ -57,6 +57,7 @@ mc.crisk.bart <- function(
         ##nrow*ndpost>2Gi!
         ##due to the 2Gi limit in sendMaster, breaking run into H parts
         ##this bug/feature is addressed in R-devel post 3.3.2
+        ##will revisit once this appears in an official R release
         ##New Features entry for R-devel post 3.3.2    
 ## The unexported low-level functions in package parallel for passing
 ## serialized R objects to and from forked children now support long

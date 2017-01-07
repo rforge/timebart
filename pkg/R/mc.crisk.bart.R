@@ -54,18 +54,24 @@ mc.crisk.bart <- function(
     if(Nx>Mx%/%ndpost) {
         H <- ceiling(ndpost / (Mx %/% Nx))
         ndpost <- ndpost %/% H
-        ##nrow*ndpost>2Gi: due to the 2Gi limit in sendMaster
-        ##(unless this limit was increased): reducing ndpost 
+        ##nrow*ndpost>2Gi!
+        ##due to the 2Gi limit in sendMaster, reducing ndpost accordingly
+        ##this bug/feature is addressed in R-devel post 3.3.2
+        ##New Features entry for R-devel post 3.3.2    
+## The unexported low-level functions in package parallel for passing
+## serialized R objects to and from forked children now support long
+## vectors on 64-bit platforms. This removes some limits on
+## higher-level functions such as mclapply()
     }
     
     mc.cores.detected <- detectCores()
 
-    if(mc.cores>mc.cores.detected) {
-        message('The number of cores requested, ', mc.cores,
-                       ',\n exceeds the number of cores detected via detectCores() ',
-                       'reducing to ', mc.cores.detected)
-        mc.cores <- mc.cores.detected
-    }
+    if(mc.cores>mc.cores.detected) mc.cores->mc.cores.detected ##  {
+    ##     message('The number of cores requested, ', mc.cores,
+    ##                    ',\n exceeds the number of cores detected via detectCores() ',
+    ##                    'reducing to ', mc.cores.detected)
+    ##     mc.cores <- mc.cores.detected
+    ## }
 
     mc.ndpost <- ((ndpost %/% mc.cores) %/% keepevery)*keepevery
 

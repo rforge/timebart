@@ -23,13 +23,6 @@ mc.recur.bart <- function(
     set.seed(seed)
     parallel::mc.reset.stream()
 
-    mc.cores.detected <- detectCores()
-
-    if(mc.cores>mc.cores.detected) mc.cores->mc.cores.detected
-        ## warning(paste0('The number of cores requested, mc.cores=', mc.cores,
-        ##                ',\n exceeds the number of cores detected via detectCores() ',
-        ##                'which yields ', mc.cores.detected, ' .'))
-
     if(length(y.train)==0) {
         recur <- recur.pre.bart(times, delta, x.train, x.test)
 
@@ -43,51 +36,82 @@ mc.recur.bart <- function(
         }
     }
     else if(length(binaryOffset)==0) binaryOffset <- 0
+    
+    H <- 1
+    Mx <- 2^31-1
+    Nx <- max(nrow(x.train), nrow(x.test))
+    
+    if(Nx>Mx%/%ndpost) {
+        H <- ceiling(ndpost / (Mx %/% Nx))
+        ndpost <- ndpost %/% H
+        ##nrow*ndpost>2Gi!
+        ##due to the 2Gi limit in sendMaster, reducing ndpost accordingly
+        ##this bug/feature is addressed in R-devel post 3.3.2
+        ##New Features entry for R-devel post 3.3.2    
+## The unexported low-level functions in package parallel for passing
+## serialized R objects to and from forked children now support long
+## vectors on 64-bit platforms. This removes some limits on
+## higher-level functions such as mclapply()
+
+    }
+    
+    mc.cores.detected <- detectCores()
+
+    if(mc.cores>mc.cores.detected) mc.cores->mc.cores.detected
+        ## warning(paste0('The number of cores requested, mc.cores=', mc.cores,
+        ##                ',\n exceeds the number of cores detected via detectCores() ',
+        ##                'which yields ', mc.cores.detected, ' .'))
 
     mc.ndpost <- ((ndpost %/% mc.cores) %/% keepevery)*keepevery
 
     while(mc.ndpost*mc.cores<ndpost) mc.ndpost <- mc.ndpost+keepevery
 
-    ##print(binaryOffset)
+    post.list <- list() 
 
-    for(i in 1:mc.cores) {
-       parallel::mcparallel({psnice(value=nice);
-                   recur.bart(x.train=x.train, y.train=y.train,
-                              x.test=x.test, x.test.nogrid=x.test.nogrid,
-                        k=k, keepcall=keepcall,
-                        power=power, base=base,
-                        binaryOffset=binaryOffset,
-                        ntree=ntree,
-                        ndpost=mc.ndpost, nskip=nskip,
-                        printevery=printevery, keepevery=keepevery, keeptrainfits=keeptrainfits,
-                        usequants=usequants, numcut=numcut, printcutoffs=printcutoffs,
-                        verbose=verbose)}, silent=(i!=1))
-                                          ## to avoid duplication of output
-                                          ## capture stdout from first posterior only
+    for(h in 1:H) {
+        for(i in 1:mc.cores) {
+            parallel::mcparallel({psnice(value=nice);
+                recur.bart(x.train=x.train, y.train=y.train,
+                           x.test=x.test, x.test.nogrid=x.test.nogrid,
+                           k=k, keepcall=keepcall,
+                           power=power, base=base,
+                           binaryOffset=binaryOffset,
+                           ntree=ntree,
+                           ndpost=mc.ndpost, nskip=nskip,
+                           printevery=printevery, keepevery=keepevery, keeptrainfits=keeptrainfits,
+                           usequants=usequants, numcut=numcut, printcutoffs=printcutoffs,
+                           verbose=verbose)},
+                silent=(i!=1))
+            ## to avoid duplication of output
+            ## capture stdout from first posterior only
+        }
+        
+        post.list[[h]] <- parallel::mccollect()
     }
 
-    post.list <- parallel::mccollect()
-
-    post <- post.list[[1]]
-
-    if(mc.cores==1) return(post)
+    if(H==1 & mc.cores==1) return(post.list[[1]][[1]])
     else {
-        for(i in 2:mc.cores) {
-            post$yhat.train <- rbind(post$yhat.train, post.list[[i]]$yhat.train)
-            post$cum.train <- rbind(post$cum.train, post.list[[i]]$cum.train)
-            post$haz.train <- rbind(post$haz.train, post.list[[i]]$haz.train)
+        for(h in 1:H) for(i in mc.cores:1) {
+                if(h==1 & i==mc.cores) post <- post.list[[1]][[mc.cores]]
+                else {
+                    post$yhat.train <- rbind(post$yhat.train, post.list[[h]][[i]]$yhat.train)
+                    post$cum.train <- rbind(post$cum.train, post.list[[h]][[i]]$cum.train)
+                    post$haz.train <- rbind(post$haz.train, post.list[[h]][[i]]$haz.train)
 
-            if(length(post$yhat.test)>0) {
-                post$yhat.test <- rbind(post$yhat.test, post.list[[i]]$yhat.test)
-                post$haz.test <- rbind(post$haz.test, post.list[[i]]$haz.test)
-                if(!x.test.nogrid) post$cum.test <- rbind(post$cum.test, post.list[[i]]$cum.test)
+                    if(length(post$yhat.test)>0) {
+                        post$yhat.test <- rbind(post$yhat.test, post.list[[h]][[i]]$yhat.test)
+                        post$haz.test <- rbind(post$haz.test, post.list[[h]][[i]]$haz.test)
+                        if(!x.test.nogrid) post$cum.test <- rbind(post$cum.test, post.list[[h]][[i]]$cum.test)
+                    }
+
+                    if(length(post$sigma)>0)
+                        post$sigma <- c(post$sigma, post.list[[h]][[i]]$sigma)
+
+                    post$varcount <- rbind(post$varcount, post.list[[h]][[i]]$varcount)
+                }
+
+                post.list[[h]][[i]] <- NULL
             }
-
-            if(length(post$sigma)>0)
-                post$sigma <- c(post$sigma, post.list[[i]]$sigma)
-
-            post$varcount <- rbind(post$varcount, post.list[[i]]$varcount)
-        }
 
         post$yhat.train.mean <- apply(post$yhat.train, 2, mean)
         post$cum.train.mean <- apply(post$cum.train, 2, mean)

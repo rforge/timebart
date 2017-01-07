@@ -45,7 +45,7 @@ mc.recur.bart <- function(
         H <- ceiling(ndpost / (Mx %/% Nx))
         ndpost <- ndpost %/% H
         ##nrow*ndpost>2Gi!
-        ##due to the 2Gi limit in sendMaster, reducing ndpost accordingly
+        ##due to the 2Gi limit in sendMaster, breaking run into H parts
         ##this bug/feature is addressed in R-devel post 3.3.2
         ##New Features entry for R-devel post 3.3.2    
 ## The unexported low-level functions in package parallel for passing

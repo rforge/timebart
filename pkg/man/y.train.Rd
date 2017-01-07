@@ -27,9 +27,8 @@ data(y.test)
 \seealso{x.train}
 \references{
 Sparapani R., Rein L., Tarima S., Jackson T., Meurer J. (2017)
-Nonparametric recurrent events analysis and
-Bayesian Additive Regression Trees with an application
-to hospital admissions for patients with diabetes.
+Nonparametric recurrent events analysis with BART
+and an application to the hospital admissions of patients with diabetes.
 \emph{Biostatistics} \bold{manuscript submitted}.
 
 %% Xu D, Daniels MJ and Winterstein AG. (2016).

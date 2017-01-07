@@ -253,10 +253,14 @@ the list has a \code{binaryOffset} component giving the value used,
    to these values.
 }
 \references{
-Xu, Daniels and Winterstein.  Sequential BART for imputation of missing
-covariates.  Biostatistics 2016 doi: 10.1093/biostatistics/kxw009
-with supplement
-\url{http://biostatistics.oxfordjournals.org/content/early/2016/03/15/biostatistics.kxw009/suppl/DC1}
+Sparapani R., Rein L., Tarima S., Jackson T., Meurer J. (2017)
+Nonparametric recurrent events analysis with BART
+and an application to the hospital admissions of patients with diabetes.
+\emph{Biostatistics} \bold{manuscript submitted}.
+%% Xu, Daniels and Winterstein.  Sequential BART for imputation of missing
+%% covariates.  Biostatistics 2016 doi: 10.1093/biostatistics/kxw009
+%% with supplement
+%% \url{http://biostatistics.oxfordjournals.org/content/early/2016/03/15/biostatistics.kxw009/suppl/DC1}
  }
 \author{
 Rodney Sparapani: \email{rsparapa@mcw.edu}
@@ -267,184 +271,72 @@ Rodney Sparapani: \email{rsparapa@mcw.edu}
 \examples{
 \dontrun{
 
-require(survival)
+data(x.train)
+data(x.test)
+data(y.train)
 
-subset <- -which(bladder1$stop==0)
-bladder0 <- bladder1[subset, ]
-id <- unique(sort(bladder0$id))
-N <- length(id)
-K <- max(bladder0$enum)
-
-times <- matrix(0, nrow=N, ncol=K)
-dimnames(times)[[1]] <- paste0(id)
-
-delta <- matrix(0, nrow=N, ncol=K)
-dimnames(delta)[[1]] <- paste0(id)
-
-X.train <- matrix(NA, nrow=N, ncol=2*K+1) ## add time-dependent cols too
-dimnames(X.train)[[1]] <- paste0(id)
-dimnames(X.train)[[2]] <- c('tx', rep(c('number', 'size'), K))
-
-for(i in 1:N) {
-    h <- id[i]
-
-    for(j in 1:K) {
-        k <- which(bladder0$id==h & bladder0$enum==j)
-
-        if(length(k)==1) {
-            times[i, j] <- bladder0$stop[k]
-            delta[i, j] <- (bladder0$status[k]==1)*1
-
-            if(j==1) {
-                X.train[i, 1] <- as.numeric(bladder0$treatment[k])
-                X.train[i, 2] <- bladder0$number[k]
-                X.train[i, 3] <- bladder0$size[k]
-            }
-            else if(delta[i, j]==1) {
-                if(bladder0$rtumor[k]!='.')
-                    X.train[i, 2*j] <- as.numeric(bladder0$rtumor[k])
-                if(bladder0$rsize[k]!='.')
-                    X.train[i, 2*j+1] <- as.numeric(bladder0$rsize[k])
-            }
-        }
-    }
-}
-
-pre <- recur.pre.bart(times=times, delta=delta, x.train=X.train)
-
-J <- nrow(pre$X.train)
-
-for(j in 1:J) {
-    if(pre$X.train[j, 3]>0) {
-        pre$X.train[j, 5] <- pre$X.train[j, 5+pre$X.train[j, 3]*2]
-        pre$X.train[j, 6] <- pre$X.train[j, 6+pre$X.train[j, 3]*2]
-    }
-}
-
-pre$X.train <- pre$X.train[ , 1:6]
-
-J <- nrow(pre$X.base)
-
-for(j in 1:J) {
-    if(pre$X.base[j, 3]>0) {
-        pre$X.base[j, 5] <- pre$X.base[j, 5+pre$X.base[j, 3]*2]
-        pre$X.base[j, 6] <- pre$X.base[j, 6+pre$X.base[j, 3]*2]
-    }
-}
-
-pre$X.base <- pre$X.base[ , 1:6]
-
-pre$X.base <- rbind(pre$X.base, pre$X.base, pre$X.base)
-
-pre$X.base[ , 4] <- c(rep(1, J), rep(2, J), rep(3, J))
-
-plot(pre$times, pre$pattern, ylim=c(0, max(pre$X.train[ , 3])))
-set.seed(10)
-u <- runif(N)*0.25
-for(i in 1:N) {
-    k <- (i-1)*60
-    h <- k+1:60
-    j <- which(!is.na(pre$X.test[h, 3]))
-    points(pre$times[j], pre$X.test[k+j, 3]+u[i], type='l')
-    j <- c(max(j), which(is.na(pre$X.test[h, 3])))
-    points(pre$times[j], pre$X.base[k+j, 3]+u[i], type='l', col='red')
-}
-
-## since BART is essentially a nonparametric function, handling
-## missing data can, in certain circumstances, be as easy as creating
-## a missing "category" for continuous and ordinal variables
-## in the bladder ex, both number and size are recorded as integers
-## from 1 to 8 so a reasonable missing category might be 0 or 9
-## however, we really want to create a generous amount of
-## separation between observed and missing data to give BART a
-## reasonable chance of splitting between them; but, perhaps, not too
-## generous otherwise you may sacrfice performance within the
-## observed data range; the usual caveats apply and it is always
-## a good idea to explore more sophisticated methods (see below)    
-pre$X.base[which(is.na(pre$X.base[ , 5])), 5] <- -2
-pre$X.base[which(is.na(pre$X.base[ , 6])), 6] <- -2
+set.seed(99)    
+post <- recur.bart(x.train=x.train, y.train=y.train, x.test=x.test)
+## larger data sets such as these can take some time
+## if parallel processing is available, uncomment this block    
+## post <- mc.recur.bart(x.train=x.train, y.train=y.train,
+##                       x.test=x.test, mc.cores=5, seed=99)
     
-## or impute missing data via your favorite method
-## such as Sequential BART (see ref above)
-## library(MASS)
-## library(Rlab)
-## library(msm)
-## source('~/sequential_bart/load-pbart.R')
-## set.seed(21)
-## base <- BartMI(bartmpicstem, xx=pre$X.base, yy=NULL, datatype=rep(0, 6),
-##                type=0, numskip=20, burn=1000)
-## coarsen the imputed data same way as observed example data
-## base$imputed5[which(base$imputed5[ , 5]<1), 5] <- 1
-## base$imputed5[which(base$imputed5[ , 5]>8), 5] <- 8
-## base$imputed5[ , 5] <- round(base$imputed5[ , 5])
-## base$imputed5[which(base$imputed5[ , 6]<1), 6] <- 1
-## base$imputed5[which(base$imputed5[ , 6]>8), 6] <- 8
-## base$imputed5[ , 6] <- round(base$imputed5[ , 6])
-## pre$X.base <- base$imputed5
-## dimnames(pre$X.base)[[2]] <- c('t', 'v', 'N', 'tx', 'number', 'size')
+dss <- rpart(post$yhat.train.mean~x.train)
 
-set.seed(99)
-post <- recur.bart(y.train=pre$y.train, x.train=pre$X.train, x.test=pre$X.base)
-## depending on your performance, you may want to run in parallel if available
-## post <- mc.recur.bart(y.train=pre$y.train, x.train=pre$X.train, x.test=pre$X.base,
-##                       mc.cores=16, seed=99)
+require(rpart.plot)
 
-K <- post$K
-M <- 1000
-haz.Pl <- matrix(0, nrow=M, ncol=K)
-haz.B6 <- matrix(0, nrow=M, ncol=K)
-haz.Th <- matrix(0, nrow=M, ncol=K)
+rpart.plot(dss)
+## notice that all splits in the tree
+## (except 1 at the bottom involving a small group)
+## involve ca, cci_pud, cci_pvd, ins270 and n
 
-for(i in 1:N) {
-    j <- (i-1)*K+1:K
-    haz.Pl <- haz.Pl+post$haz.test[1:M, j]/N
-    haz.B6 <- haz.B6+post$haz.test[1:M, j+N*K]/N
-    haz.Th <- haz.Th+post$haz.test[1:M, j+N*K*2]/N
-}
+## compare patients treated with insulin vs not   
+N.train <- 235
+N.test <- 253
+K <- post$K ## 798 unique time points
 
-haz.Pl.m <- apply(haz.Pl, 2, mean)
-haz.B6.m <- apply(haz.B6, 2, mean)
-haz.Th.m <- apply(haz.Th, 2, mean)
+## only testing set, i.e., remove training set    
+x.test. <- x.test[N.train*K+(1:(N.test*K)), ]
+x.test. <- rbind(x.test., x.test.)
+x.test.[ , 'ins270'] <- rep(0:1, each=N.test*K)
 
-plot(post$times, haz.Pl.m, type='l',
-     main='bladder ex: Placebo (black), B6 (red), Thiotepa (blue)',
-     ylab=expression(lambda(t)), xlab='t (months)',
-     ylim=c(0, max(c(haz.Pl.m, haz.B6.m, haz.Th.m))))
-points(post$times, haz.B6.m, type='l', col='red')
-points(post$times, haz.Th.m, type='l', col='blue')
+## with timebart we can't predict x.test without also training
+## we are working on enhancing this in the near future    
+set.seed(99)    
+post. <- recur.bart(x.train=x.train, y.train=y.train, x.test=x.test.)
+## larger data sets such as these can take some time
+## if parallel processing is available, uncomment this block    
+## post. <- mc.recur.bart(x.train=x.train, y.train=y.train,
+##                        x.test=x.test., mc.cores=5, seed=99)
+    
+## create Friedman's partial dependence function for the
+## intensity/hazard by time and ins270
+NK.test <- N.test*K
+M <- nrow(post$haz.test) ## number of MCMC samples, typically 1000
+    
+RI <- matrix(0, M, K)
+    
+for(i in 1:N.test) 
+    RI <- RI+(post.$haz.test[ , (N.test+i-1)*K+1:K]/
+              post.$haz.test[ , (i-1)*K+1:K])/N.test
+    
+RI.lo <- apply(RI, 2, quantile, probs=0.025)
+RI.mu <- apply(RI, 2, mean)
+RI.hi <- apply(RI, 2, quantile, probs=0.975)
+    
+plot(post.$times, RI.hi, type='l', lty=2, log='y',
+     ylim=c(min(RI.lo, 1/RI.hi), max(1/RI.lo, RI.hi)),
+     xlab='t', ylab='RI(t, x)',
+     sub='insulin(ins270=1) vs. no insulin(ins270=0)',
+     main='Relative intensity of hospital admissions for diabetics')
+lines(post.$times, RI.mu)
+lines(post.$times, RI.lo, lty=2)
+lines(post.$times, rep(1, K), col='darkgray')
 
-plot(post$times, apply(1*((haz.Th/haz.Pl) < 1), 2, mean),
-     type='l', ylim=c(0, 1),
-     main='bladder ex: Thiotepa vs. Placebo',
-     ylab=expression(P(RR(t)<1)), xlab='t (months)')
-     points(c(0, max(post$times)), c(0.5, 0.5), type='l', col='gray')
-
-rr.Th.Pl.m <- apply(haz.Th/haz.Pl, 2, mean)
-rr.Th.Pl.l <- apply(haz.Th/haz.Pl, 2, quantile, probs=0.25)
-rr.Th.Pl.u <- apply(haz.Th/haz.Pl, 2, quantile, probs=0.75)
-plot(post$times, rr.Th.Pl.m, type='l', log='y',
-     main='bladder ex: Thiotepa vs. Placebo with 50% CI',
-     ylab=expression(RR(t)), xlab='t (months)', ylim=c(0.625, 1.6))
-points(post$times, rr.Th.Pl.l, type='l', col='gray')
-points(post$times, rr.Th.Pl.u, type='l', col='gray')
-points(c(0, max(post$times)), c(1, 1), type='l')
-
-rr.Th.B6.m <- apply(haz.Th/haz.B6, 2, mean)
-rr.Th.B6.l <- apply(haz.Th/haz.B6, 2, quantile, probs=0.25)
-rr.Th.B6.u <- apply(haz.Th/haz.B6, 2, quantile, probs=0.75)
-plot(post$times, rr.Th.B6.m, type='l', log='y',
-     main='bladder ex: Thiotepa vs. Vitamin B6 with 50% CI',
-     ylab=expression(RR(t)), xlab='t (months)', ylim=c(0.625, 1.6))
-points(post$times, rr.Th.B6.l, type='l', col='gray')
-points(post$times, rr.Th.B6.u, type='l', col='gray')
-points(c(0, max(post$times)), c(1, 1), type='l')
-
-plot(post$times, apply(1*((haz.Th/haz.B6) < 1), 2, mean),
-     type='l', ylim=c(0, 1),
-     main='bladder ex: Thiotepa vs. Vitamin B6',
-     ylab=expression(P(RR(t)<1)), xlab='t (months)')
-     points(c(0, max(post$times)), c(0.5, 0.5), type='l', col='gray')
-
+## RI for insulin therapy seems fairly constant with time
+mean(RI.mu)
+    
 }
 }
 \keyword{nonparametric recurrent events model}
